@@ -40,7 +40,7 @@ class Piece(Board):
 
     def encode_move(self, move: str) -> int:
         """Encodes move into an integer from algebraic notation. In the form of: id - piece_type - location_y - location_x"""
-
+        
 
     def check_in_bounds(self, end: int, board: Board):
         pass
