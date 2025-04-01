@@ -28,12 +28,17 @@ class Board():
 
 
 class Piece(Board):
-    def __init__(self, side: str, board: Board, ):
+    def __init__(self, side: str, board: Board):
         self.side = side
         self.directions = []
         self.board = board
-    
-    def encode_move(move: str) -> int:
+        self.squares_attacking = []
+
+    # TODO: update_squares_attacking
+    def update_squares_attacking(self):
+        pass
+
+    def encode_move(self, move: str) -> int:
         """Encodes move into an integer from algebraic notation. In the form of: id - piece_type - location_y - location_x"""
 
 
