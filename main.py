@@ -8,7 +8,7 @@ class Board():
     def __init__(self, game: ChessGame, side: str = 'w'):
         self.game = game
         self.side = side
-        self.current_board = [[Rook("b", self), Knight("b", self), Bishop("b", self), Queen("b", self), King("b", self), Bishop("b", self), Knight("b", self), Rook("b", self)],
+        self.current_board = [[Rook("b", self, 1), Knight("b", self, 1), Bishop("b", self, 1), Queen("b", self), King("b", self), Bishop("b", self), Knight("b", self), Rook("b", self)],
                             [Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self)],
                             ["", "", "", "", "", "", "", ""],
                             ["", "", "", "", "", "", "", ""],
@@ -39,8 +39,8 @@ class Piece(Board):
         pass
 
     def encode_move(self, move: str) -> int:
-        """Encodes move into an integer from algebraic notation. In the form of: id - piece_type - location_y - location_x"""
-        
+        """Encodes move into an integer from algebraic notation. In the form of: piece_type - rank - location_y - location_x"""
+
 
     def check_in_bounds(self, end: int, board: Board):
         pass
