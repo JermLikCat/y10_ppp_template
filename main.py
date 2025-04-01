@@ -39,8 +39,8 @@ class Piece(Board):
         pass
 
     def encode_move(self, move: str) -> int:
-        """Encodes move into an integer from algebraic notation. In the form of: piece_type - rank - location_y - location_x"""
-
+        """Encodes move into an integer from algebraic notation. In the form of: piece_type - rank (as required) - location_y - location_x"""
+        pass
 
     def check_in_bounds(self, end: int, board: Board):
         pass
