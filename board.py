@@ -5,7 +5,7 @@ class Board():
     def __init__(self, game: chess_game.ChessGame, board: list[list[pieces.Piece]], side: str = 'w'):
         self.game = game
         self.side = side
-        self.current_board = [[Rook("b", self, True), Knight("b", self, 1), Bishop("b", self, 1), Queen("b", self), King("b", self), Bishop("b", self), Knight("b", self), Rook("b", self)],
+        self.current_board = [[Rook("b", True), Knight("b", 1), Bishop("b", 1), Queen("b", self), King("b", self), Bishop("b", self), Knight("b", self), Rook("b", self)],
                             [Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self), Pawn("b", self)],
                             ["", "", "", "", "", "", "", ""],
                             ["", "", "", "", "", "", "", ""],
