@@ -1,6 +1,6 @@
 import chess_game
 import pieces
-
+ssssss = True
 class Board():
     def __init__(self, game: chess_game.ChessGame, board: list[list[pieces.Piece]], side: str = 'w'):
         self.game = game
