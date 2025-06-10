@@ -1,4 +1,13 @@
 class Board():
+    """ Piece IDs: Pawn: 0, Bishop: 1, Rook: 2, Knight: 3, Queen: 4, King: 5, Empty: 6"""
+    PAWN_ID = 0
+    BISHOP_ID = 1
+    ROOK_ID = 2
+    KNIGHT_ID = 3
+    QUEEN_ID = 4
+    KING_ID = 5
+    EMPTY_ID = 6
+
     def __init__(self, game, side: str = "w"):
         self.game = game
         self.side = side
@@ -7,6 +16,8 @@ class Board():
         # self.board = board
         self.setup_board()
         self.setup_bitboards(self.board)
+        self.move((0, 0), (7, 1))
+        self.print_bitboard(self.piece_bitboards[KNIGHT_ID])
 
     def setup_board(self):
         """Initialize the original boards"""
@@ -56,7 +67,7 @@ class Board():
 
         self.white_bitboard = int(self.white_bitboard, 2)
         self.black_bitboard = int(self.black_bitboard, 2)
-        for bitboard in range(self.piece_bitboards):
+        for bitboard in range(len(self.piece_bitboards)):
             self.piece_bitboards[bitboard] = int(self.piece_bitboards[bitboard], 2)
 
 
@@ -83,39 +94,32 @@ class Board():
         movebb[p1index] = "1"
         movebb[p2index] = "1"
         movebb = "".join(movebb)
+        movebb = int(movebb, 2)
 
         takenbb = ["0"] * self.board_area
         takenbb[p2index] = "1"
         takenbb = "".join(takenbb)
-        self.print_bitboard(movebb)
-        self.print_bitboard(takenbb)
+        takenbb = int(takenbb, 2)
+
         # Update white and black bitboards
         if p2piece.side == "w":
-            self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(takenbb, 2))[2:]
+            self.white_bitboard = self.white_bitboard ^ takenbb
         elif p2piece.side == "b":
-            self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(takenbb, 2))[2:]
+            self.black_bitboard = self.black_bitboard ^ takenbb
         
         if p1piece.side == "w":
-            self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(movebb, 2))[2:]
-            self.white_bitboard = bin(int(self.white_bitboard, 2) | int(takenbb, 2))[2:]
+            self.white_bitboard = self.white_bitboard ^ movebb
+            self.white_bitboard = self.white_bitboard | takenbb
         elif p1piece.side == "b":
-            self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(movebb, 2))[2:]
-            self.black_bitboard = bin(int(self.black_bitboard, 2) | int(takenbb, 2))[2:]
+            self.black_bitboard = self.black_bitboard ^ movebb
+            self.black_bitboard = self.black_bitboard | takenbb
         
         # If piece is taken update bitboard of taken piece first
         if p2piece.id != 6:
-            self.piece_bitboards[p2piece.id] = bin(int(self.piece_bitboards[p2piece.id], 2) ^ int(takenbb, 2))[2:]
+            self.piece_bitboards[p2piece.id] = self.piece_bitboards[p2piece.id] ^ takenbb
         # Then update bitboard of moved piece
         if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id] = bin(int(self.piece_bitboards[p1piece.id], 2) ^ int(movebb, 2))[2:]
-        
-        # Reformat bitboards
-        self.white_bitboard = self.format_bitboard(self.white_bitboard)
-        self.black_bitboard = self.format_bitboard(self.black_bitboard)
-        if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id] = self.format_bitboard(self.piece_bitboards[p1piece.id])
-        if p2piece.id != 6:
-            self.piece_bitboards[p2piece.id] = self.format_bitboard(self.piece_bitboards[p2piece.id])
+            self.piece_bitboards[p1piece.id] = self.piece_bitboards[p1piece.id] ^ movebb
 
         # Move piece
         self.board[p2[0]][p2[1]] = self.board[p1[0]][p1[1]]
@@ -128,7 +132,8 @@ class Board():
         return (self.board_area - len(bb)) * "0" + bb
     
     # TEMPORARY
-    def print_bitboard(self, bb):
+    def print_bitboard(self, bb: int):
+        bb = bin(bb)[2:]
         bb = self.format_bitboard(bb)
         x = 0
         y = 0
