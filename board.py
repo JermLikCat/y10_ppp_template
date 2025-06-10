@@ -7,10 +7,11 @@ class Board():
         # self.board = board
         self.setup_board()
         self.setup_bitboards(self.board)
-        self.move((0, 0), (7, 0))
+        self.move((0, 2), (7, 3))
         self.print_bitboard(self.white_bitboard)
         self.print_bitboard(self.black_bitboard)
-        self.print_bitboard(self.piece_bitboards[2])
+        self.print_bitboard(self.piece_bitboards[4])
+        self.print_bitboard(self.piece_bitboards[1])
 
     def setup_board(self):
         """Initialize the original boards"""
