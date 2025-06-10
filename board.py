@@ -88,7 +88,8 @@ class Board():
         takenbb = ["0"] * self.board_area
         takenbb[p2index] = "1"
         takenbb = "".join(takenbb)
-
+        self.print_bitboard(movebb)
+        self.print_bitboard(takenbb)
         # Update white and black bitboards
         if p2piece.side == "w":
             self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(takenbb, 2))[2:]
