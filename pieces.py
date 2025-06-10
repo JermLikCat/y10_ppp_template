@@ -24,8 +24,20 @@ class Bishop(Piece):
         super().__init__(board, side, 1)
 
 class Rook(Piece):
+    DIRECTIONS = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
     def __init__(self, board: board.Board, side: str):
         super().__init__(board, side, 2)
+
+    def generate_rays(self, position: tuple[int], board_length: int, board_width: int):
+        bitboard = ["0"] * board_length * board_width
+
+        for y in range(board_length):
+            for x in range(board_width):
+                posdiff = (position[0] - y, position[1] - x)
+                print(posdiff)
+
+
 
 class Knight(Piece):
     def __init__(self, board: board.Board, side: str):

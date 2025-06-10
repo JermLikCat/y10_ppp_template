@@ -16,8 +16,10 @@ class Board():
         # self.board = board
         self.setup_board()
         self.setup_bitboards(self.board)
+        self.check_move_legal((0, 0), (7, 1))
         self.move((0, 0), (7, 1))
-        self.print_bitboard(self.white_bitboard & self.piece_bitboards[self.PAWN_ID])
+        self.print_bitboard(self.piece_bitboards[self.ROOK_ID])
+        
 
     def setup_board(self):
         """Initialize the original boards"""
@@ -69,6 +71,9 @@ class Board():
         self.black_bitboard = int(self.black_bitboard, 2)
         for bitboard in range(len(self.piece_bitboards)):
             self.piece_bitboards[bitboard] = int(self.piece_bitboards[bitboard], 2)
+
+    def check_move_legal(self, p1: tuple[int], p2: tuple[int]):
+        self.board[0][0].generate_rays((5, 0), self.board_length, self.board_width)
 
 
     def generate_all_possible_moves(self):
