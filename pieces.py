@@ -13,7 +13,7 @@ class Piece():
         """Encodes move into an integer from algebraic notation. In the form of: piece_type - rank (as required) - location_y - location_x"""
         pass
     
-    def is_multiple(self, raypos: tuple[int, int], direction: tuple[int, int], board_length: int, board_width: int) -> bool:
+    def is_multiple(self, currentpos: tuple[int, int], raypos: tuple[int, int], direction: tuple[int, int], board_length: int, board_width: int) -> bool:
         print(raypos)
         if direction[0] == 0:
             if raypos[0] != 0:
@@ -21,7 +21,7 @@ class Piece():
         else:
             if raypos[0] % direction[0] != 0:
                 return False
-            if raypos[0] == 0 or raypos[0] == board_width - 1:
+            if currentpos[0] == 0 or currentpos[0] == board_width - 1:
                 return False
         
         if direction[1] == 0:
@@ -30,38 +30,34 @@ class Piece():
         else:
             if raypos[1] % direction[1] != 0:
                 return False
-            if raypos[1] == 0 or raypos[1] == board_length - 1:
+            if currentpos[1] == 0 or currentpos[1] == board_length - 1:
                 return False
         
         return True
-        
-
-        
-class Pawn(Piece):
-    def __init__(self, board: board.Board, side: str):
-        super().__init__(board, side, 0)
-        
-
-class Bishop(Piece):
-    def __init__(self, board: board.Board, side: str):
-        super().__init__(board, side, 1)
-
-class Rook(Piece):
-    DIRECTIONS = [(0, 1), (0, -1), (1, 0), (-1, 0)]
-
-    def __init__(self, board: board.Board, side: str):
-        super().__init__(board, side, 2)
-
-    def generate_rays(self, position: tuple[int, int], board_length: int, board_width: int):
+    
+    def generate_sliding_rays(self, position: tuple[int, int], directions: list[tuple[int, int]], board_length: int, board_width: int):
         bitboard = ["0"] * board_length * board_width
         print(f"Position: {position}")
         
-        # Get rays
+        """
+        Generate rays for a sliding piece for use in magic bitboards:
+        e.g. for rook:
+        . . . . . . . .
+        . . # . . . . .
+        . # . # # # # .
+        . . # . . . . .
+        . . # . . . . .
+        . . # . . . . .
+        . . # . . . . .
+        . . . . . . . .
+        """
+        
         for y in range(board_length):
             for x in range(board_width):
                 posdiff = (y - position[0], x - position[1])
-                for direction in self.DIRECTIONS:
-                    if self.is_multiple(posdiff, direction, board_length, board_width):
+                currentpos = (y, x)
+                for direction in directions:
+                    if self.is_multiple(currentpos, posdiff, direction, board_length, board_width):
                         bitboard[y * board_length + x] = "1"
                         break
                   
@@ -72,6 +68,24 @@ class Rook(Piece):
         
         bitboard = int(bitboard, 2)
         return bitboard
+
+        
+class Pawn(Piece):
+    def __init__(self, board: board.Board, side: str):
+        super().__init__(board, side, 0)
+        
+
+class Bishop(Piece):
+    DIRECTIONS = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
+    
+    def __init__(self, board: board.Board, side: str):
+        super().__init__(board, side, 1)
+
+class Rook(Piece):
+    DIRECTIONS = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+    def __init__(self, board: board.Board, side: str):
+        super().__init__(board, side, 2)
 
                         
 
