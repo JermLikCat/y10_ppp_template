@@ -23,18 +23,18 @@ class Bishop(Piece):
     def __init__(self, board: board.Board, side: str):
         super().__init__(board, side, 1)
 
-class Queen(Piece):
+class Rook(Piece):
     def __init__(self, board: board.Board, side: str):
         super().__init__(board, side, 2)
 
-class Rook(Piece):
-    def __init__(self, board: board.Board, side: str):
-        super().__init__(board, side, 3)
-
 class Knight(Piece):
     def __init__(self, board: board.Board, side: str):
-        super().__init__(board, side, 4)
+        super().__init__(board, side, 3)
         self.directions = [(1, 2), (2, 1), (2, -1), (-1, 2), (1, -2), (-2, 1), (-1, -2), (-2, -1)]
+
+class Queen(Piece):
+    def __init__(self, board: board.Board, side: str):
+        super().__init__(board, side, 4)
 
 class King(Piece):
     def __init__(self, board: board.Board, side: str):
