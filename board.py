@@ -8,10 +8,9 @@ class Board():
         self.setup_board()
         self.setup_bitboards(self.board)
         self.move((0, 0), (7, 0))
-        print(self.white_bitboard)
-        print(self.black_bitboard)
-        print(self.bmaterial)
-        print(self.piece_bitboards[2])
+        self.print_bitboard(self.white_bitboard)
+        self.print_bitboard(self.black_bitboard)
+        self.print_bitboard(self.piece_bitboards[2])
 
     def setup_board(self):
         """Initialize the original boards"""
@@ -122,3 +121,13 @@ class Board():
     def format_bitboard(self, bb: str) -> str:
         # Return bitboard string with empty 0s filled in at the back
         return (self.board_area - len(bb)) * "0" + bb
+    
+    # TEMPORARY
+    def print_bitboard(self, bb):
+        x = 0
+        y = 0
+        for y in range(self.board_width):
+            for x in range(self.board_length):
+                print(bb[y * self.board_width + x], end=" ")
+            print()
+        print()
