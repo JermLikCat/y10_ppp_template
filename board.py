@@ -73,6 +73,7 @@ class Board():
 
 
     def generate_all_possible_moves(self):
+        
         pass
     
     def move(self, p1: tuple[int], p2: tuple[int]):
