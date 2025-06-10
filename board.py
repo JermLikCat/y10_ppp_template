@@ -7,10 +7,6 @@ class Board():
         # self.board = board
         self.setup_board()
         self.setup_bitboards(self.board)
-        self.move((0, 2), (7, 3))
-        self.print_bitboard(self.white_bitboard)
-        self.print_bitboard(self.black_bitboard)
-        self.print_bitboard(self.piece_bitboards[4])
 
     def setup_board(self):
         """Initialize the original boards"""
@@ -115,6 +111,8 @@ class Board():
         self.black_bitboard = self.format_bitboard(self.black_bitboard)
         if p1piece.id != 6:
             self.piece_bitboards[p1piece.id] = self.format_bitboard(self.piece_bitboards[p1piece.id])
+        if p2piece.id != 6:
+            self.piece_bitboards[p2piece.id] = self.format_bitboard(self.piece_bitboards[p2piece.id])
 
         # Move piece
         self.board[p2[0]][p2[1]] = self.board[p1[0]][p1[1]]
