@@ -10,7 +10,6 @@ class Board():
         self.move((0, 2), (7, 3))
         self.print_bitboard(self.white_bitboard)
         self.print_bitboard(self.black_bitboard)
-        self.print_bitboard(self.piece_bitboards[4])
         self.print_bitboard(self.piece_bitboards[1])
 
     def setup_board(self):
@@ -58,6 +57,8 @@ class Board():
                     pieces.remove(piece.id)
                 for pid in pieces:
                     self.piece_bitboards[pid] += "0"
+
+        self.print_bitboard(self.piece_bitboards[1])
 
 
     def generate_all_possible_moves(self):
