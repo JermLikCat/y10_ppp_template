@@ -12,6 +12,24 @@ class Piece():
     def encode_move(self, move: str) -> int:
         """Encodes move into an integer from algebraic notation. In the form of: piece_type - rank (as required) - location_y - location_x"""
         pass
+    
+    def is_multiple(self, raypos: tuple[int, int], direction: tuple[int, int], board_length: int, board_width: int) -> bool:
+        if direction[0] == 0:
+            if raypos[0] != 0:
+                return False
+        else:
+            if raypos[0] % direction[0] != 0:
+                return False
+        
+        if direction[1] == 0:
+            if raypos[1] != 0:
+                return False
+        else:
+            if raypos[1] % direction[1] != 0:
+                return False
+        
+        return True
+        
 
         
 class Pawn(Piece):
@@ -29,13 +47,28 @@ class Rook(Piece):
     def __init__(self, board: board.Board, side: str):
         super().__init__(board, side, 2)
 
-    def generate_rays(self, position: tuple[int], board_length: int, board_width: int):
+    def generate_rays(self, position: tuple[int, int], board_length: int, board_width: int):
         bitboard = ["0"] * board_length * board_width
         print(f"Position: {position}")
+        
+        # Get rays
         for y in range(board_length):
             for x in range(board_width):
                 posdiff = (y - position[0], x - position[1])
-                print(posdiff)
+                for direction in self.DIRECTIONS:
+                    if self.is_multiple(posdiff, direction, board_length, board_width):
+                        bitboard[y * board_length + x] = "1"
+                        break
+                  
+        # Remove piece itself
+        bitboard[position[0] * board_length + position[1]] = "0"
+        
+        bitboard = "".join(bitboard)
+        
+        bitboard = int(bitboard, 2)
+        return bitboard
+
+                        
 
 
 

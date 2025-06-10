@@ -16,8 +16,8 @@ class Board():
         # self.board = board
         self.setup_board()
         self.setup_bitboards(self.board)
-        self.check_move_legal((0, 0), (7, 1))
-        self.move((0, 0), (7, 1))
+        self.move((0, 0), (3, 3))
+        self.check_move_legal((3, 3), (4, 4))
         self.print_bitboard(self.piece_bitboards[self.ROOK_ID])
         
 
@@ -73,7 +73,7 @@ class Board():
             self.piece_bitboards[bitboard] = int(self.piece_bitboards[bitboard], 2)
 
     def check_move_legal(self, p1: tuple[int], p2: tuple[int]):
-        self.board[0][0].generate_rays((0, 0), self.board_length, self.board_width)
+        self.print_bitboard(self.board[p1[0]][p1[1]].generate_rays((p1[0], p1[1]), self.board_length, self.board_width))
 
 
     def generate_all_possible_moves(self):
