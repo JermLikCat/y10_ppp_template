@@ -86,6 +86,10 @@ class Board():
         takenbb[p2index] = "1"
         takenbb = "".join(takenbb)
 
+        print("Move and takenbb:")
+        self.print_bitboard(movebb)
+        self.print_bitboard(takenbb)
+
         # Update white and black bitboards
         if p2piece.side == "w":
             print(self.white_bitboard)
@@ -107,7 +111,7 @@ class Board():
         
         # Then update bitboard of moved piece
         if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id] = bin(int(self.piece_bitboards[p1piece.id], 2) | int(takenbb, 2))[2:]
+            self.piece_bitboards[p1piece.id] = bin(int(self.piece_bitboards[p1piece.id], 2) | int(movebb, 2))[2:]
 
         # Reformat bitboards
         self.white_bitboard = self.format_bitboard(self.white_bitboard)
