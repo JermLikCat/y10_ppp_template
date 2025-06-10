@@ -14,6 +14,7 @@ class Piece():
         pass
     
     def is_multiple(self, raypos: tuple[int, int], direction: tuple[int, int], board_length: int, board_width: int) -> bool:
+        print(raypos)
         if direction[0] == 0:
             if raypos[0] != 0:
                 return False

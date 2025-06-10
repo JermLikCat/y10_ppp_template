@@ -35,8 +35,10 @@ class Board():
             [pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
             [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
             ]
-        self.board_length = len(self.board[0])
-        self.board_width = len(self.board)
+        
+        # Length: Y, Width: X
+        self.board_length = len(self.board)
+        self.board_width = len(self.board[0])
         self.board_area = self.board_length * self.board_width
 
     def setup_bitboards(self, board):
