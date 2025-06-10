@@ -17,8 +17,7 @@ class Board():
         self.setup_board()
         self.setup_bitboards(self.board)
         self.move((0, 0), (7, 1))
-        self.print_bitboard(self.white_bitboard)
-        self.print_bitboard(self.black_bitboard)
+        self.print_bitboard(self.white_bitboard & self.piece_bitboards[self.PAWN_ID])
 
     def setup_board(self):
         """Initialize the original boards"""
@@ -73,7 +72,7 @@ class Board():
 
 
     def generate_all_possible_moves(self):
-        
+
         pass
     
     def move(self, p1: tuple[int], p2: tuple[int]):
