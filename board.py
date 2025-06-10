@@ -101,13 +101,13 @@ class Board():
             self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(movebb, 2))[2:]
             self.black_bitboard = bin(int(self.black_bitboard, 2) | int(takenbb, 2))[2:]
         
-        # Update bitboard of moved piece
-        if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id] = bin(int(self.piece_bitboards[p1piece.id], 2) | int(takenbb, 2))[2:]
-
-        # If piece is taken update bitboard of taken piece
+        # If piece is taken update bitboard of taken piece first
         if p2piece.id != 6:
             self.piece_bitboards[p2piece.id] = bin(int(self.piece_bitboards[p2piece.id], 2) ^ int(takenbb, 2))[2:]
+        
+        # Then update bitboard of moved piece
+        if p1piece.id != 6:
+            self.piece_bitboards[p1piece.id] = bin(int(self.piece_bitboards[p1piece.id], 2) | int(takenbb, 2))[2:]
 
         # Reformat bitboards
         self.white_bitboard = self.format_bitboard(self.white_bitboard)
