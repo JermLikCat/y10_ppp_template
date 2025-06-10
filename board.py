@@ -17,7 +17,8 @@ class Board():
         self.setup_board()
         self.setup_bitboards(self.board)
         self.move((0, 0), (7, 1))
-        self.print_bitboard(self.piece_bitboards[KNIGHT_ID])
+        self.print_bitboard(self.white_bitboard)
+        self.print_bitboard(self.black_bitboard)
 
     def setup_board(self):
         """Initialize the original boards"""
