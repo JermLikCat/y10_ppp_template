@@ -54,7 +54,10 @@ class Board():
                 for pid in pieces:
                     self.piece_bitboards[pid] += "0"
 
-        self.print_bitboard(self.piece_bitboards[4])
+        self.white_bitboard = int(self.white_bitboard, 2)
+        self.black_bitboard = int(self.black_bitboard, 2)
+        for bitboard in range(self.piece_bitboards):
+            self.piece_bitboards[bitboard] = int(self.piece_bitboards[bitboard], 2)
 
 
     def generate_all_possible_moves(self):
@@ -126,6 +129,7 @@ class Board():
     
     # TEMPORARY
     def print_bitboard(self, bb):
+        bb = self.format_bitboard(bb)
         x = 0
         y = 0
         for y in range(self.board_width):
