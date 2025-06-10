@@ -63,6 +63,7 @@ class Board():
         pass
     
     def move(self, p1: tuple[int], p2: tuple[int]):
+        # TODO: represent boards in integers instead of strings - strings were used for debugging
         # Position in the form of (y, x)
         p1piece = self.board[p1[0]][p1[1]]
         p2piece = self.board[p2[0]][p2[1]]
