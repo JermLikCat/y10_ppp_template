@@ -91,12 +91,10 @@ class Board():
 
         # Update white and black bitboards
         if p2piece.side == "w":
-            print(self.white_bitboard)
-            print(takenbb)
             self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(takenbb, 2))[2:]
         elif p2piece.side == "b":
             self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(takenbb, 2))[2:]
-        print(self.white_bitboard)
+        
         if p1piece.side == "w":
             self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(movebb, 2))[2:]
             self.white_bitboard = bin(int(self.white_bitboard, 2) | int(takenbb, 2))[2:]
