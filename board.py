@@ -127,8 +127,6 @@ class Board():
         import pieces
         self.board[p1[0]][p1[1]] = pieces.EmptyPiece(self)
 
-        
-
         pass
     
     def format_bitboard(self, bb: str) -> str:
