@@ -31,10 +31,10 @@ class Rook(Piece):
 
     def generate_rays(self, position: tuple[int], board_length: int, board_width: int):
         bitboard = ["0"] * board_length * board_width
-
+        print(f"Position: {position}")
         for y in range(board_length):
             for x in range(board_width):
-                posdiff = (position[0] - y, position[1] - x)
+                posdiff = (y - position[0], x - position[1])
                 print(posdiff)
 
 

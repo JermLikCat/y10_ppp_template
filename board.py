@@ -73,7 +73,7 @@ class Board():
             self.piece_bitboards[bitboard] = int(self.piece_bitboards[bitboard], 2)
 
     def check_move_legal(self, p1: tuple[int], p2: tuple[int]):
-        self.board[0][0].generate_rays((5, 0), self.board_length, self.board_width)
+        self.board[0][0].generate_rays((0, 0), self.board_length, self.board_width)
 
 
     def generate_all_possible_moves(self):
