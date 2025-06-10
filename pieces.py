@@ -20,12 +20,16 @@ class Piece():
         else:
             if raypos[0] % direction[0] != 0:
                 return False
+            if raypos[0] == 0 or raypos[0] == board_width - 1:
+                return False
         
         if direction[1] == 0:
             if raypos[1] != 0:
                 return False
         else:
             if raypos[1] % direction[1] != 0:
+                return False
+            if raypos[1] == 0 or raypos[1] == board_length - 1:
                 return False
         
         return True
