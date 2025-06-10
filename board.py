@@ -75,33 +75,39 @@ class Board():
 
         # Update bitboards
         # Make new bitboard to represent move
-        newb = ["0"] * self.board_area
+        movebb = ["0"] * self.board_area
         p1index = p1[0] * self.board_length + p1[1]
         p2index = p2[0] * self.board_length + p2[1]
-        newb[p1index] = "1"
-        newb[p2index] = "1"
-        newb = "".join(newb)
+        movebb[p1index] = "1"
+        movebb[p2index] = "1"
+        movebb = "".join(movebb)
 
-        taken = ["0"] * self.board_area
-        taken[p2index] = "1"
-        taken = "".join(taken)
+        takenbb = ["0"] * self.board_area
+        takenbb[p2index] = "1"
+        takenbb = "".join(takenbb)
 
+        # Update white and black bitboards
         if p2piece.side == "w":
             print(self.white_bitboard)
-            print(taken)
-            self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(taken, 2))[2:]
+            print(takenbb)
+            self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(takenbb, 2))[2:]
         elif p2piece.side == "b":
-            self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(taken, 2))[2:]
+            self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(takenbb, 2))[2:]
         print(self.white_bitboard)
         if p1piece.side == "w":
-            self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(newb, 2))[2:]
-            self.white_bitboard = bin(int(self.white_bitboard, 2) | int(taken, 2))[2:]
+            self.white_bitboard = bin(int(self.white_bitboard, 2) ^ int(movebb, 2))[2:]
+            self.white_bitboard = bin(int(self.white_bitboard, 2) | int(takenbb, 2))[2:]
         elif p1piece.side == "b":
-            self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(newb, 2))[2:]
-            self.black_bitboard = bin(int(self.black_bitboard, 2) | int(taken, 2))[2:]
+            self.black_bitboard = bin(int(self.black_bitboard, 2) ^ int(movebb, 2))[2:]
+            self.black_bitboard = bin(int(self.black_bitboard, 2) | int(takenbb, 2))[2:]
         
+        # Update bitboard of moved piece
         if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id] = bin(int(self.piece_bitboards[p1piece.id], 2) ^ int(newb, 2))[2:]
+            self.piece_bitboards[p1piece.id] = bin(int(self.piece_bitboards[p1piece.id], 2) | int(takenbb, 2))[2:]
+
+        # If piece is taken update bitboard of taken piece
+        if p2piece.id != 6:
+            self.piece_bitboards[p2piece.id] = bin(int(self.piece_bitboards[p2piece.id], 2) ^ int(takenbb, 2))[2:]
 
         # Reformat bitboards
         self.white_bitboard = self.format_bitboard(self.white_bitboard)
