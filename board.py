@@ -83,7 +83,8 @@ class Board():
             
     def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
-        rays = piece.generate_sliding_rays((p1[0], p1[1]), piece.DIRECTIONS, self.board_length, self.board_width)
+        mask = piece.generate_sliding_rays((p1[0], p1[1]), piece.DIRECTIONS, self.board_length, self.board_width)
+        lookup_table = [0] * 
         
     def generate_all_possible_moves(self):
         pass

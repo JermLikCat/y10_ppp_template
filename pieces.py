@@ -99,6 +99,7 @@ class Knight(Piece):
         self.directions = [(1, 2), (2, 1), (2, -1), (-1, 2), (1, -2), (-2, 1), (-1, -2), (-2, -1)]
 
 class Queen(Piece):
+    DIRECTIONS = [(1, 1), (1, -1), (-1, 1), (-1, -1), (0, 1), (0, -1), (1, 0), (-1, 0)]
     def __init__(self, board: board.Board, side: str):
         super().__init__(board, side, 4)
 
