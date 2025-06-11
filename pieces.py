@@ -92,9 +92,6 @@ class Rook(Piece):
     def __init__(self, board: board.Board, side: str):
         super().__init__(board, side, 2)
 
-                        
-
-
 
 class Knight(Piece):
     def __init__(self, board: board.Board, side: str):

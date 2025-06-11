@@ -74,10 +74,17 @@ class Board():
         for bitboard in range(len(self.piece_bitboards)):
             self.piece_bitboards[bitboard] = int(self.piece_bitboards[bitboard], 2)
 
-    def check_move_legal(self, p1: tuple[int], p2: tuple[int]):
-        self.print_bitboard(self.board[p1[0]][p1[1]].generate_sliding_rays((p1[0], p1[1]), self.board[p1[0]][p1[1]].DIRECTIONS, self.board_length, self.board_width))
-
-
+    def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
+        piece = self.board[p1[0]][p1[1]]
+        
+        # If piece is sliding
+        if piece.id in [1, 2, 4]:
+            self.check_sliding_move_legal(piece, p1, p2)
+            
+    def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
+        # Magic bitboard method
+        rays = piece.generate_sliding_rays((p1[0], p1[1]), piece.DIRECTIONS, self.board_length, self.board_width)
+        
     def generate_all_possible_moves(self):
         pass
     
