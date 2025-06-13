@@ -10,10 +10,6 @@ class Board():
     QUEEN_ID = 4
     KING_ID = 5
     EMPTY_ID = 6
-    
-    ROOK_MAGICS = [
-        []
-    ]
 
     def __init__(self, game, side: str = "w"):
         self.game = game
