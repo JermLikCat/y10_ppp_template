@@ -40,7 +40,7 @@ class Piece():
         
         return True
     
-    def generate_sliding_rays(self, position: tuple[int, int], directions: list[tuple[int, int]], board_length: int, board_width: int):
+    def generate_sliding_mask(self, position: tuple[int, int], directions: list[tuple[int, int]], board_length: int, board_width: int):
         bitboard = ["0"] * board_length * board_width
         print(f"Position: {position}")
         
@@ -73,6 +73,8 @@ class Piece():
         
         bitboard = int(bitboard, 2)
         return bitboard
+    
+    
 
         
 class Pawn(Piece):

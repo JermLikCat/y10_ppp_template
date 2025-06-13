@@ -1,3 +1,5 @@
+import bitboard
+
 class Board():
     """ Piece IDs: Pawn: 0, Bishop: 1, Rook: 2, Knight: 3, Queen: 4, King: 5, Empty: 6"""
     PAWN_ID = 0
@@ -7,15 +9,23 @@ class Board():
     QUEEN_ID = 4
     KING_ID = 5
     EMPTY_ID = 6
+    
+    ROOK_MAGICS = [
+        []
+    ]
 
     def __init__(self, game, side: str = "w"):
         self.game = game
         self.side = side
         self.wmaterial = []
         self.bmaterial = []
+        self.white_bitboard: int = 0
+        self.black_bitboard: int = 0
+        self.piece_bitboards: list[int] = [0, 0, 0, 0, 0, 0]
         # self.board = board
         self.setup_board()
         self.setup_bitboards(self.board)
+        self.generate_magic_bitboards()
         self.move((0, 2), (3, 2))
         self.check_move_legal((3, 2), (4, 4))
         self.print_bitboard(self.piece_bitboards[self.ROOK_ID])
@@ -42,37 +52,38 @@ class Board():
         self.board_area = self.board_length * self.board_width
 
     def setup_bitboards(self, board):
-        
-        """Initializes all bitboards."""
-        self.white_bitboard = ""
-        self.black_bitboard = ""
-        self.piece_bitboards = ["", "", "", "", "", ""]
-
+        white_bitboard = ""
+        black_bitboard = ""
+        piece_bitboards = ["", "", "", "", "", ""]
         for row in board:
             for piece in row:
                 # First recognize if piece is black or white
                 if piece.side == "w":
-                    self.white_bitboard += "1"
-                    self.black_bitboard += "0"
+                    white_bitboard += "1"
+                    black_bitboard += "0"
                 elif piece.side == "b":
-                    self.black_bitboard += "1"
-                    self.white_bitboard += "0"
+                    black_bitboard += "1"
+                    white_bitboard += "0"
                 else:
-                    self.white_bitboard += "0"
-                    self.black_bitboard += "0"
+                    white_bitboard += "0"
+                    black_bitboard += "0"
 
                 # Then check for pieces
                 pieces = [0, 1, 2, 3, 4, 5]
                 if piece.id in pieces:
-                    self.piece_bitboards[piece.id] += "1"
+                    piece_bitboards[piece.id] += "1"
                     pieces.remove(piece.id)
                 for pid in pieces:
-                    self.piece_bitboards[pid] += "0"
+                    piece_bitboards[pid] += "0"
 
-        self.white_bitboard = int(self.white_bitboard, 2)
-        self.black_bitboard = int(self.black_bitboard, 2)
-        for bitboard in range(len(self.piece_bitboards)):
-            self.piece_bitboards[bitboard] = int(self.piece_bitboards[bitboard], 2)
+        self.white_bitboard = int(white_bitboard, 2)
+        self.black_bitboard = int(black_bitboard, 2)
+        for bitboard in range(len(piece_bitboards)):
+            self.piece_bitboards[bitboard] = int(piece_bitboards[bitboard], 2)
+            
+    def generate_magic_bitboards(self):
+        self.ROOK_MOVES = [bitboard.Bitboard(0, self.board_width, self.board_length)] * 102400
+        self.ROOK_MOVES = [bitboard.Bitboard(0, self.board_width, self.board_length)] * 5248
 
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         piece = self.board[p1[0]][p1[1]]
@@ -83,10 +94,10 @@ class Board():
             
     def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
-        mask = piece.generate_sliding_rays((p1[0], p1[1]), piece.DIRECTIONS, self.board_length, self.board_width)
-        lookup_table = [0] * 
+        mask = piece.generate_sliding_mask((p1[0], p1[1]), piece.DIRECTIONS, self.board_length, self.board_width)
+        lookup_table = "TODO"
         
-    def generate_all_possible_moves(self):
+    def generate_pseudolegal_moves(self):
         pass
     
     def move(self, p1: tuple[int], p2: tuple[int]):
