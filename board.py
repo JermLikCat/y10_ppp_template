@@ -1,4 +1,5 @@
 import bitboard
+from magicnums import ROOK_MOVES
 
 class Board():
     """ Piece IDs: Pawn: 0, Bishop: 1, Rook: 2, Knight: 3, Queen: 4, King: 5, Empty: 6"""
