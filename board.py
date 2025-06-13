@@ -1,5 +1,5 @@
 import bitboard
-from magicnums import ROOK_MOVES
+import magicnums
 
 class Board():
     """ Piece IDs: Pawn: 0, Bishop: 1, Rook: 2, Knight: 3, Queen: 4, King: 5, Empty: 6"""
@@ -91,6 +91,13 @@ class Board():
             
     def generate_magic_bitboards(self):
         self.ROOK_TABLE 
+
+    def generate_magic_table(self, table_size: int, directions: list[tuple[int, int]], magic_nums: list[magicnums.MagicData]) -> list[bitboard.Bitboard]:
+        table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
+        
+        for y, pieces in enumerate(self.board):
+            for x, piece in enumerate(pieces):
+                pass
 
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         piece = self.board[p1[0]][p1[1]]
