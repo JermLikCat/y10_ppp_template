@@ -5,8 +5,8 @@ class Bitboard():
         self.board_height = board_height
         self.board_area = board_width * board_height
     
-    def display_bitboard(self, bb: int):
-        bbstring = self.format_bitboard(bin(bb)[2:])
+    def display_bitboard(self):
+        bbstring = self.format_bitboard(bin(self.value)[2:])
         x = 0
         y = 0
         for y in range(self.board_width):
@@ -18,3 +18,6 @@ class Bitboard():
     def format_bitboard(self, bb: str) -> str:
         # Return bitboard string with empty 0s filled in at the back
         return (self.board_area - len(bb)) * "0" + bb
+
+    def update(self, new_value: int):
+        self.value = new_value

@@ -26,12 +26,12 @@ class Board():
         # self.board = board
         
         self.setup_bitboards(self.board)
-        self.generate_magic_bitboards()
         self.move((0, 2), (3, 2))
         self.check_move_legal((3, 2), (4, 4))
-        self.print_bitboard(self.piece_bitboards[self.ROOK_ID])
+        self.piece_bitboards[self.ROOK_ID].display_bitboard()
         
-
+    # SETUP
+    
     def setup_board(self):
         """Initialize the original boards"""
         import pieces
@@ -53,6 +53,9 @@ class Board():
         self.board_area = self.board_height * self.board_width
 
     def setup_bitboards(self, board):
+        
+        # Initial generation of bitboards
+        
         white_bitboard = ""
         black_bitboard = ""
         piece_bitboards = ["", "", "", "", "", ""]
@@ -77,14 +80,17 @@ class Board():
                 for pid in pieces:
                     piece_bitboards[pid] += "0"
 
-        self.white_bitboard = int(white_bitboard, 2)
-        self.black_bitboard = int(black_bitboard, 2)
+        self.white_bitboard.update(int(white_bitboard, 2))
+        self.black_bitboard.update(int(black_bitboard, 2))
         for bitboard in range(len(piece_bitboards)):
-            self.piece_bitboards[bitboard] = int(piece_bitboards[bitboard], 2)
+            self.piece_bitboards[bitboard].update(int(piece_bitboards[bitboard], 2))
+            
+        # Generation of magic bitboards
+        
+        self.generate_magic_bitboards()
             
     def generate_magic_bitboards(self):
-        self.ROOK_MOVES = [bitboard.Bitboard(0, self.board_width, self.board_height)] * 102400
-        self.ROOK_MOVES = [bitboard.Bitboard(0, self.board_width, self.board_height)] * 5248
+        pass
 
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         piece = self.board[p1[0]][p1[1]]
@@ -154,18 +160,3 @@ class Board():
         self.board[p1[0]][p1[1]] = pieces.EmptyPiece(self)
         pass
     
-    def format_bitboard(self, bb: str) -> str:
-        # Return bitboard string with empty 0s filled in at the back
-        return (self.board_area - len(bb)) * "0" + bb
-    
-    # TEMPORARY
-    def print_bitboard(self, bb: int):
-        bb = bin(bb)[2:]
-        bb = self.format_bitboard(bb)
-        x = 0
-        y = 0
-        for y in range(self.board_width):
-            for x in range(self.board_height):
-                print(bb[y * self.board_width + x], end=" ")
-            print()
-        print()
