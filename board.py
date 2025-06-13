@@ -92,13 +92,30 @@ class Board():
     def generate_magic_bitboards(self):
         self.ROOK_TABLE 
 
-    def generate_magic_table(self, table_size: int, directions: list[tuple[int, int]], magic_nums: list[magicnums.MagicData]) -> list[bitboard.Bitboard]:
+    def generate_magic_tables(self, table_size: int, magic_nums: list[magicnums.MagicData], piece_id: int) -> list[bitboard.Bitboard]:
+        # TODO: replace this with running multiple functions that generate tables
         table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
         
         for y, pieces in enumerate(self.board):
             for x, piece in enumerate(pieces):
+                index = y * self.board_width + x
+                # Possible rays of the piece
+                
                 pass
-
+            
+    def generate_rook_magic_table():
+        pass
+    
+    def generate_bishop_magic_table():
+        pass
+    
+    def generate_queen_magic_tables():
+        pass
+    
+    def generate_magic_index(blockers: bitboard.Bitboard, magic_number: int, index_number: int) -> int:
+        # Index bits are actually directly stored as 64 - their real value to decrease amount of operations needed
+        return (blockers.value * magic_number) >> index_number
+    
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         piece = self.board[p1[0]][p1[1]]
         
@@ -114,7 +131,7 @@ class Board():
     def generate_pseudolegal_moves(self):
         pass
     
-    def move(self, p1: tuple[int], p2: tuple[int]):
+    def move(self, p1: tuple[int, int], p2: tuple[int, int]):
         # TODO: represent boards in integers instead of strings - strings were used for debugging
         # Position in the form of (y, x)
         p1piece = self.board[p1[0]][p1[1]]
@@ -141,25 +158,26 @@ class Board():
         takenbb = "".join(takenbb)
         takenbb = int(takenbb, 2)
 
-        # Update white and black bitboards
+        # Update white and black bitboards of the attacked piece
         if p2piece.side == "w":
-            self.white_bitboard = self.white_bitboard ^ takenbb
+            self.white_bitboard.update(self.white_bitboard.value ^ takenbb)
         elif p2piece.side == "b":
-            self.black_bitboard = self.black_bitboard ^ takenbb
+            self.black_bitboard.update(self.black_bitboard.value ^ takenbb)
         
+        # Update white and black bitboards of the moving piece
         if p1piece.side == "w":
-            self.white_bitboard = self.white_bitboard ^ movebb
-            self.white_bitboard = self.white_bitboard | takenbb
+            self.white_bitboard.update(self.white_bitboard.value ^ takenbb)
+            self.white_bitboard.update(self.white_bitboard.value | takenbb)
         elif p1piece.side == "b":
-            self.black_bitboard = self.black_bitboard ^ movebb
-            self.black_bitboard = self.black_bitboard | takenbb
+            self.black_bitboard.update(self.black_bitboard.value ^ movebb)
+            self.black_bitboard.update(self.black_bitboard.value | takenbb)
         
         # If piece is taken update bitboard of taken piece first
         if p2piece.id != 6:
-            self.piece_bitboards[p2piece.id] = self.piece_bitboards[p2piece.id] ^ takenbb
+            self.piece_bitboards[p2piece.id].update(self.piece_bitboards[p2piece.id].value ^ takenbb)
         # Then update bitboard of moved piece
         if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id] = self.piece_bitboards[p1piece.id] ^ movebb
+            self.piece_bitboards[p1piece.id].update(self.piece_bitboards[p1piece.id].value ^ movebb)
 
         # Move piece
         self.board[p2[0]][p2[1]] = self.board[p1[0]][p1[1]]
