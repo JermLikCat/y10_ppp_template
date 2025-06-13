@@ -16,7 +16,7 @@ class Board():
         self.side = side
         self.wmaterial = []
         self.bmaterial = []
-        self.white_bitboard: int = 0
+        self.white_bitboard: bitboard.Bitboard = bitboard.Bitboard(0, 8, 8)
         self.black_bitboard: int = 0
         self.piece_bitboards: list[int] = [0, 0, 0, 0, 0, 0]
         # self.board = board
