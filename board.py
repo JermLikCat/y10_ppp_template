@@ -90,7 +90,7 @@ class Board():
         self.generate_magic_bitboards()
             
     def generate_magic_bitboards(self):
-        pass
+        self.ROOK_TABLE 
 
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         piece = self.board[p1[0]][p1[1]]
