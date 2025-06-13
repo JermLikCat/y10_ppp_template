@@ -1,5 +1,5 @@
 """
-PLACEHOLDER DATA TAKEN FROM 
+PLACEHOLDER DATA TAKEN FROM https://github.com/analog-hors/magic-bitboards-demo/blob/main/magic-demo/build/magics.rs
 """
 
 from dataclasses import dataclass
@@ -144,3 +144,6 @@ BISHOP_MOVES = [
     MagicData [ 0x0020100804020000, 0xA001204204080186, 59, 5152 ],
     MagicData [ 0x0040201008040200, 0xC04010040258C048, 58, 5184 ]
 ]
+
+ROOK_SIZE = 102400
+BISHOP_SIZE = 5248
