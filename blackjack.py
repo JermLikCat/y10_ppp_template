@@ -61,6 +61,7 @@ class BlackjackRound:
         while len(self.player_deck.cards) < 2:
             self.player_deck.draw(self.cards)
             
+        print(self.player_deck.cards)
         self.split_check()
         self.game_loop()
     
