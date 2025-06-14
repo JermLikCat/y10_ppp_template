@@ -96,7 +96,7 @@ class BlackjackRound:
                 
     def split(self):
         # make a new round with 1 of the same card
-        round = 
+        round = BlackjackRound()
     
     def user_choice(self) -> bool:
         """Returns False if hit, and returns True if stand."""
