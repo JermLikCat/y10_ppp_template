@@ -27,6 +27,7 @@ class BlackjackGame:
             bet = self.display_bet_screen(self.player_money)
             self.player_money -= bet
             round = BlackjackRound(self.player_money, bet)
+            self.player_money = round.player_money
         print("You ran out of money!")
         
 class BlackjackRound:
@@ -82,7 +83,7 @@ class BlackjackRound:
         self.dealer_deck.print_deck()
         
         # Check final outcome
-        self.player_money += self.check_final_outcome(bet)
+        self.player_money += self.check_final_outcome(self.bet)
     
     def split_check(self):
         if self.player_deck.can_split() and self.bet * 2 < self.player_money:
