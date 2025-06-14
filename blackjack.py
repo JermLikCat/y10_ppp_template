@@ -58,7 +58,7 @@ class BlackjackRound:
         self.dealer_deck.draw(self.cards, 2)
         print(self.dealer_deck)
         # Initialize empty player cards
-        self.player_deck = Deck()
+        self.player_deck = Deck([])
         print(self.player_deck, self.player_deck.cards)
     
     def user_choice(self) -> bool:
@@ -137,15 +137,10 @@ class Deck:
     def draw(self, card_deck, quantity: int = 1):
         from random import randint
         
-        print(card_deck.cards)
         for _ in range(quantity):
             index = randint(0, len(card_deck.cards) - 1)
             self.cards.append(card_deck.cards[index])
             card_deck.cards.pop(index)
-            
-        print(self.cards)
-        print(self)
-            
         
     def print_deck(self, hidden: list[int] = []):
         """Displays deck with all indexes in list of int given being hidden"""
