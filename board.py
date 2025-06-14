@@ -91,20 +91,20 @@ class Board():
             
     def generate_magic_bitboards(self):
         self.ROOK_TABLE 
-
-    def generate_magic_tables(self, table_size: int, magic_nums: list[magicnums.MagicData], piece_id: int) -> list[bitboard.Bitboard]:
-        # TODO: replace this with running multiple functions that generate tables
-        table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
+            
+    def generate_rook_magic_table(self):
+        table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * magicnums.ROOK_SIZE
         
-        for y, pieces in enumerate(self.board):
-            for x, piece in enumerate(pieces):
+        for y in range(self.board_height):
+            for x in range(self.board_width):
                 index = y * self.board_width + x
+                
                 # Possible rays of the piece
+                rays = magicnums.ROOK_MOVES[index].mask
+                
+                # Loop through all subsets
                 
                 pass
-            
-    def generate_rook_magic_table():
-        pass
     
     def generate_bishop_magic_table():
         pass
