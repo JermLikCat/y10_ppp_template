@@ -71,8 +71,8 @@ class BlackjackRound:
             print("Blackjack!")
         else:
             while self.user_choice():
-                # Check if player has lost
-                if self.did_bust(self.player_deck):
+                # Check if player has lost or won
+                if self.did_bust(self.player_deck) or self.player_deck.return_value() == 21:
                     break
                 
         # Display dealer's and player's final cards
