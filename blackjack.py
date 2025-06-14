@@ -28,11 +28,16 @@ class BlackjackGame:
             self.player_money -= bet
             
             round = BlackjackRound(self.player_money)
-            while round.user_choice():
-                # Check if player has lost
-                if round.did_bust(round.player_deck):
-                    break
-                
+            
+            # Blackjack Check
+            if round.player_money.return_value() == 21:
+                print("Blackjack!")
+            else:
+                while round.user_choice():
+                    # Check if player has lost
+                    if round.did_bust(round.player_deck):
+                        break
+                    
             # Display dealer's and player's final cards
             print("Your final cards: ")
             round.player_deck.print_deck()
