@@ -26,32 +26,7 @@ class BlackjackGame:
         while self.player_money > 0:
             bet = self.display_bet_screen(self.player_money)
             self.player_money -= bet
-            
             round = BlackjackRound(self.player_money, bet)
-            
-            # Blackjack Check
-            if round.player_money.return_value() == 21:
-                print("Blackjack!")
-            else:
-                while round.user_choice():
-                    # Check if player has lost
-                    if round.did_bust(round.player_deck):
-                        break
-                    
-            # Display dealer's and player's final cards
-            print("Your final cards: ")
-            round.player_deck.print_deck()
-            
-            print("Dealer's current cards: ")
-            round.dealer_deck.print_deck()
-            while round.dealer_deck.return_value() < 17:
-                round.dealer_deck.draw(round.cards)
-            
-            print("Dealer's final cards: ")
-            round.dealer_deck.print_deck()
-            
-            # Check final outcome
-            self.player_money += round.check_final_outcome(bet)
         print("You ran out of money!")
         
 class BlackjackRound:
@@ -82,6 +57,32 @@ class BlackjackRound:
             self.player_deck = player_deck
         self.player_deck.draw(self.cards, 2)
         self.split_check()
+        self.game_loop()
+    
+    def game_loop(self):
+        # Blackjack Check
+        if self.player_deck.return_value() == 21:
+            print("Blackjack!")
+        else:
+            while self.user_choice():
+                # Check if player has lost
+                if self.did_bust(self.player_deck):
+                    break
+                
+        # Display dealer's and player's final cards
+        print("Your final cards: ")
+        self.player_deck.print_deck()
+        
+        print("Dealer's current cards: ")
+        self.dealer_deck.print_deck()
+        while self.dealer_deck.return_value() < 17:
+            self.dealer_deck.draw(self.cards)
+        
+        print("Dealer's final cards: ")
+        self.dealer_deck.print_deck()
+        
+        # Check final outcome
+        self.player_money += self.check_final_outcome(bet)
     
     def split_check(self):
         if self.player_deck.can_split() and self.bet * 2 < self.player_money:
