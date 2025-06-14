@@ -104,10 +104,10 @@ class BlackjackRound:
                 
     def split(self):
         # make a new round with 1 of the same card
-        newdeck = Deck(self.player_deck.cards[0])
+        newdeck = Deck([self.player_deck.cards[0]])
         round = BlackjackRound(self.player_money, self.bet, self.cards, None, newdeck)
         self.player_money = round.player_money
-        self.player_deck.cards = self.player_deck.cards[1]
+        self.player_deck.cards = [self.player_deck.cards[1]]
         while len(self.player_deck.cards) < 2:
             self.player_deck.draw(self.cards)
     
