@@ -171,11 +171,11 @@ class Deck:
         value = 0
         aces = 0
         for card in self.cards:
-            if card[0] not in ['A', 'K', 'Q', 'J']:
-                value += int(card[1])
-            elif card[0] in ['K', 'Q', 'J']:
+            if card[1] not in ['A', 'K', 'Q', 'J']:
+                value += int(card[1:])
+            elif card[1] in ['K', 'Q', 'J']:
                 value += 10
-            elif card[0] in ['A']:
+            elif card[1] in ['A']:
                 # Deal with aces at the end
                 aces += 1
                 
