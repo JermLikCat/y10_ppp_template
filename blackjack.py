@@ -37,7 +37,7 @@ class BlackjackGame():
                 round.dealer_deck.draw(round.cards)
             
             # Check final outcome
-            player_money += round.check_final_outcome()
+            self.player_money += round.check_final_outcome()
         print("You ran out of money!")
         
 class BlackjackRound():
@@ -134,8 +134,9 @@ class Deck():
         from random import randint
         for _ in range(quantity):
             index = randint(0, len(card_deck.cards) - 1)
-            card_deck.cards.pop(index)
             self.cards.append(card_deck.cards[index])
+            card_deck.cards.pop(index)
+            
         
     def print_deck(self, hidden: list[int] = []):
         """Displays deck with all indexes in list of int given being hidden"""
