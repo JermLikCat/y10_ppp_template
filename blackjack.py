@@ -69,7 +69,7 @@ class BlackjackRound():
         self.dealer_deck.print_deck([1])
         
         choice = input("Hit or stand? ").strip().lower()
-        while choice != "hit" or choice != "stand":
+        while choice != "hit" and choice != "stand":
             print("Invalid input! Please only input 'hit' or 'stand'.")
             choice = input("Hit or stand? ").strip().lower()
         
