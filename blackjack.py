@@ -34,7 +34,7 @@ class BlackjackGame:
                     break
                 
             # Display dealer's and player's final cards
-            print("Your final cards" )
+            print("Your final cards: ")
             round.player_deck.print_deck()
             print("Dealer's final cards: ")
             round.dealer_deck.print_deck()
