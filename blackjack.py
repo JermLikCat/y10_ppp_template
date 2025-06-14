@@ -22,7 +22,8 @@ class BlackjackGame():
         return player_money - int(bet_amount)
     
     def game_loop(self):
-        self.player_money = self.display_bet_screen(self.player_money)
+        bet = self.display_bet_screen(self.player_money)
+        self.player_money -= bet
         while self.player_money > 0:
             round = BlackjackRound(self.player_money)
             while round.user_choice():
@@ -37,7 +38,7 @@ class BlackjackGame():
                 round.dealer_deck.draw(round.cards)
             
             # Check final outcome
-            self.player_money += round.check_final_outcome()
+            self.player_money += round.check_final_outcome(bet)
         print("You ran out of money!")
         
 class BlackjackRound():
@@ -116,15 +117,15 @@ class BlackjackRound():
     # Outcomes
     def push(self, bet):
         print("Push!")
-        return 0
+        return bet
         
     def win(self, bet):
         print("You won!")
-        return bet
+        return bet * 2
         
     def loss(self, bet):
         print("You lost.")
-        return -bet
+        return 0
         
 class Deck():
     def __init__(self, cards: list[str] = []):
