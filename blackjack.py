@@ -133,7 +133,7 @@ class Deck():
     def draw(self, card_deck, quantity: int = 1):
         from random import randint
         for _ in range(quantity):
-            index = randint(0, len(card_deck.cards))
+            index = randint(0, len(card_deck.cards) - 1)
             card_deck.cards.pop(index)
             self.cards.append(card_deck.cards[index])
         
