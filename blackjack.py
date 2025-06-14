@@ -8,7 +8,6 @@ class BlackjackGame():
         
         # Bet screen (Game loop)
         self.game_loop()
-        pass
     
     def display_opening_screen(self):
         print("Welcome to Blackjack!")
@@ -20,7 +19,7 @@ class BlackjackGame():
         bet_amount = input("How much would you like to bet? ")
         while not bet_amount.isnumeric() or int(bet_amount) <= 0 or int(bet_amount) > player_money:
             bet_amount = input("How much would you like to bet? ")
-        return player_money - bet_amount
+        return player_money - int(bet_amount)
     
     def game_loop(self):
         self.player_money = self.display_bet_screen(self.player_money)
@@ -38,7 +37,8 @@ class BlackjackGame():
                 round.dealer_deck.draw(round.cards)
             
             # Check final outcome
-            round.check_final_outcome()
+            player_money += round.check_final_outcome()
+        print("You ran out of money!")
         
 class BlackjackRound():
     SUITS = ("\u2663", "\u2665", "\u2666", "\u2660")
@@ -92,11 +92,39 @@ class BlackjackRound():
         else:
             return False
         
-    def check_final_outcome(self):
+    def check_final_outcome(self, bet):
         player_did_bust = self.did_bust(self.player_deck)
         dealer_did_bust = self.did_bust(self.dealer_deck)
         
+        # If both player and dealer bust
+        if player_did_bust and dealer_did_bust:
+            return self.push(bet)
+        elif player_did_bust and not dealer_did_bust:
+            return self.loss(bet)
+        elif not player_did_bust and dealer_did_bust:
+            return self.win(bet)
+        else:
+            player_deck_val = self.player_deck.return_value()
+            dealer_deck_val = self.dealer_deck.return_value()
+            if player_deck_val > dealer_deck_val:
+                return self.win(bet)
+            elif player_deck_val < dealer_deck_val:
+                return self.lose(bet)
+            elif player_deck_val == dealer_deck_val:
+                return self.push(bet)
         
+    # Outcomes
+    def push(self, bet):
+        print("Push!")
+        return 0
+        
+    def win(self, bet):
+        print("You won!")
+        return bet
+        
+    def loss(self, bet):
+        print("You lost.")
+        return -bet
         
 class Deck():
     def __init__(self, cards: list[str] = []):
@@ -113,7 +141,7 @@ class Deck():
     def print_deck(self, hidden: list[int] = []):
         """Displays deck with all indexes in list of int given being hidden"""
         
-        if len(self.cards > 0):
+        if len(self.cards) > 0:
             for x, card in enumerate(self.cards):
                 if x not in hidden:
                     print(card, end = " ")
@@ -145,3 +173,5 @@ class Deck():
                 value += 10
         
         return value
+    
+game = BlackjackGame()
