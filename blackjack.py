@@ -49,14 +49,18 @@ class BlackjackRound:
             self.dealer_deck = Deck()
         else:
             self.dealer_deck = dealer_deck
-        self.dealer_deck.draw(self.cards, 2)
+        while len(self.dealer_deck.cards) < 2:
+            self.dealer_deck.draw(self.cards)
 
         # Initialize empty player cards
         if player_deck is None:
             self.player_deck = Deck()
         else:
             self.player_deck = player_deck
-        self.player_deck.draw(self.cards, 2)
+        
+        while len(self.player_deck.cards) < 2:
+            self.player_deck.draw(self.cards)
+            
         self.split_check()
         self.game_loop()
     
@@ -98,10 +102,13 @@ class BlackjackRound:
                 self.split()
                 
     def split(self):
-        
         # make a new round with 1 of the same card
-        round = BlackjackRound()
+        newdeck = Deck(self.player_deck.cards[0])
+        round = BlackjackRound(self.player_money, self.bet, self.cards, None, newdeck)
         self.player_money = round.player_money
+        self.player_deck.cards = self.player_deck.cards[1]
+        while len(self.player_deck.cards) < 2:
+            self.player_deck.draw(self.cards)
     
     def user_choice(self) -> bool:
         """Returns False if hit, and returns True if stand."""
