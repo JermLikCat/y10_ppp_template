@@ -1,4 +1,4 @@
-class BlackjackGame():
+class BlackjackGame:
     def __init__(self):
         # Initialize money
         self.player_money = 1000
@@ -43,7 +43,7 @@ class BlackjackGame():
             self.player_money += round.check_final_outcome(bet)
         print("You ran out of money!")
         
-class BlackjackRound():
+class BlackjackRound:
     SUITS = ("\u2663", "\u2665", "\u2666", "\u2660")
     RANKS = ('A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K')
     
@@ -56,7 +56,7 @@ class BlackjackRound():
         # Draw dealer cards
         self.dealer_deck = Deck()
         self.dealer_deck.draw(self.cards, 2)
-        
+        print(self.dealer_deck)
         # Initialize empty player cards
         self.player_deck = Deck()
     
@@ -129,7 +129,7 @@ class BlackjackRound():
         print("You lost.")
         return 0
         
-class Deck():
+class Deck:
     def __init__(self, cards: list[str] = []):
         self.cards = cards
     
