@@ -112,7 +112,7 @@ class BlackjackRound:
             if player_deck_val > dealer_deck_val:
                 return self.win(bet)
             elif player_deck_val < dealer_deck_val:
-                return self.lose(bet)
+                return self.loss(bet)
             elif player_deck_val == dealer_deck_val:
                 return self.push(bet)
         
