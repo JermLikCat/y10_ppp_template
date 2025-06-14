@@ -129,7 +129,6 @@ class BlackjackRound():
 class Deck():
     def __init__(self, cards: list[str] = []):
         self.cards = cards
-        pass
     
     def draw(self, card_deck, quantity: int = 1):
         from random import randint
