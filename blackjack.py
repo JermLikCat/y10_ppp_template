@@ -36,11 +36,16 @@ class BlackjackGame:
             # Display dealer's and player's final cards
             print("Your final cards: ")
             round.player_deck.print_deck()
-            print("Dealer's final cards: ")
+            print(round.dealer_deck.return_value())
+            
+            print("Dealer's current cards: ")
             round.dealer_deck.print_deck()
             print(round.dealer_deck.return_value())
             while round.dealer_deck.return_value() < 17:
                 round.dealer_deck.draw(round.cards)
+            
+            print("Dealer's final cards: ")
+            round.dealer_deck.print_deck()
             
             # Check final outcome
             self.player_money += round.check_final_outcome(bet)
