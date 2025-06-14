@@ -23,9 +23,10 @@ class BlackjackGame():
         return player_money - int(bet_amount)
     
     def game_loop(self):
-        bet = self.display_bet_screen(self.player_money)
-        self.player_money -= bet
         while self.player_money > 0:
+            bet = self.display_bet_screen(self.player_money)
+            self.player_money -= bet
+            
             round = BlackjackRound(self.player_money)
             while round.user_choice():
                 # Check if player has lost
