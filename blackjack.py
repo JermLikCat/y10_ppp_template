@@ -58,8 +58,8 @@ class BlackjackRound:
     SUITS = ("\u2663", "\u2665", "\u2666", "\u2660")
     RANKS = ('A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K')
     
-    def __init__(self, player_money, cards = None, dealer_deck = None, player_deck = None):
-        self.player_money = player_money
+    def __init__(self, bet, cards = None, dealer_deck = None, player_deck = None):
+        self.bet = bet
         
         if cards is None:  
             # Initialize cards
