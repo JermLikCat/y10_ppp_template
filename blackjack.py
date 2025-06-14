@@ -56,10 +56,9 @@ class BlackjackRound:
         # Draw dealer cards
         self.dealer_deck = Deck()
         self.dealer_deck.draw(self.cards, 2)
-        print(self.dealer_deck)
+
         # Initialize empty player cards
         self.player_deck = Deck([])
-        print(self.player_deck, self.player_deck.cards)
     
     def user_choice(self) -> bool:
         """Returns False if hit, and returns True if stand."""
@@ -131,8 +130,12 @@ class BlackjackRound:
         return 0
         
 class Deck:
-    def __init__(self, cards: list[str] = []):
-        self.cards = cards
+    def __init__(self, cards: list[str] = None):
+        # Prevent same list from being used in different constructions of objects of Deck (Strange python thing, more info here: https://stackoverflow.com/questions/366422/how-can-i-avoid-issues-caused-by-pythons-early-bound-default-parameters-e-g-m)
+        if cards is None: 
+            self.cards = []
+        else:
+            self.cards = cards
     
     def draw(self, card_deck, quantity: int = 1):
         from random import randint
@@ -142,8 +145,12 @@ class Deck:
             self.cards.append(card_deck.cards[index])
             card_deck.cards.pop(index)
         
-    def print_deck(self, hidden: list[int] = []):
+    def print_deck(self, hidden: list[int] = None):
         """Displays deck with all indexes in list of int given being hidden"""
+        
+        # Prevent same list from being used in different calls
+        if hidden is None: 
+            hidden = []
         
         if len(self.cards) > 0:
             for x, card in enumerate(self.cards):
