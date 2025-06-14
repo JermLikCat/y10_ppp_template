@@ -20,7 +20,7 @@ class BlackjackGame:
         while not bet_amount.isnumeric() or int(bet_amount) <= 0 or int(bet_amount) > player_money:
             print("Invalid bet amount!")
             bet_amount = input("How much would you like to bet? ")
-        return player_money - int(bet_amount)
+        return int(bet_amount)
     
     def game_loop(self):
         while self.player_money > 0:
@@ -33,8 +33,10 @@ class BlackjackGame:
                 if round.did_bust(round.player_deck):
                     break
                 
-            # Display dealer's cards
-            print("Dealer's cards: ")
+            # Display dealer's and player's final cards
+            print("Your final cards" )
+            round.player_deck.print_deck()
+            print("Dealer's final cards: ")
             round.dealer_deck.print_deck()
             while round.dealer_deck.return_value() < 17:
                 round.dealer_deck.draw(round.cards)
