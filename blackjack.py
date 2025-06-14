@@ -89,6 +89,7 @@ class BlackjackRound:
         
         # Check final outcome
         self.player_money += self.check_final_outcome(self.bet)
+        print(f"Final outcome: {self.check_final_outcome(self.bet)}")
     
     def split_check(self):
         if self.player_deck.can_split() and self.bet * 2 < self.player_money:
