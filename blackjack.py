@@ -18,6 +18,7 @@ class BlackjackGame():
         print()
         bet_amount = input("How much would you like to bet? ")
         while not bet_amount.isnumeric() or int(bet_amount) <= 0 or int(bet_amount) > player_money:
+            print("Invalid bet amount!")
             bet_amount = input("How much would you like to bet? ")
         return player_money - int(bet_amount)
     
