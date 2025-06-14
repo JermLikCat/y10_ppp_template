@@ -58,19 +58,45 @@ class BlackjackRound:
     SUITS = ("\u2663", "\u2665", "\u2666", "\u2660")
     RANKS = ('A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K')
     
-    def __init__(self, player_money):
+    def __init__(self, player_money, cards = None, dealer_deck = None, player_deck = None):
         self.player_money = player_money
         
-        # Initialize cards
-        self.cards = self.generate_card_list(self.SUITS, self.RANKS)
+        if cards is None:  
+            # Initialize cards
+            self.cards = self.generate_card_list(self.SUITS, self.RANKS)
+        else:
+            self.cards = cards
         
-        # Draw dealer cards
-        self.dealer_deck = Deck()
+        if dealer_deck is None:
+            # Draw dealer cards
+            self.dealer_deck = Deck()
+        else:
+            self.dealer_deck = dealer_deck
         self.dealer_deck.draw(self.cards, 2)
 
         # Initialize empty player cards
-        self.player_deck = Deck()
+        if player_deck is None:
+            self.player_deck = Deck()
+        else:
+            self.player_deck = player_deck
         self.player_deck.draw(self.cards, 2)
+        self.split_check()
+    
+    def split_check(self):
+        if self.player_deck.can_split():
+            print("Your deck: ")
+            self.player_deck.print_deck()
+            split = input("Would you like to split? (y/n) ").strip().lower()
+            while split != "y" and split != "n":
+                print("Invalid input! Please only input 'hit' or 'stand'.")
+                split = input("Would you like to split? (y/n) ").strip().lower()
+            
+            if split == "y":
+                self.split()
+                
+    def split(self):
+        # make a new round with 1 of the same card
+        round = 
     
     def user_choice(self) -> bool:
         """Returns False if hit, and returns True if stand."""
@@ -82,6 +108,9 @@ class BlackjackRound:
         # Print dealer deck with second card hidden
         print("Dealer's deck: ")
         self.dealer_deck.print_deck([1])
+        
+        
+            
         
         choice = input("Hit or stand? ").strip().lower()
         while choice != "hit" and choice != "stand":
@@ -196,5 +225,11 @@ class Deck:
                 value += 10
         
         return value
+    
+    def can_split(self):
+        if len(self.cards) == 2:
+            if self.cards[0][1:] == self.cards[1][1:]:
+                return True
+        return False
     
 game = BlackjackGame()
