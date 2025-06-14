@@ -60,7 +60,8 @@ class BlackjackRound:
         self.dealer_deck.draw(self.cards, 2)
 
         # Initialize empty player cards
-        self.player_deck = Deck([])
+        self.player_deck = Deck()
+        self.player_deck.draw(self.cards, 2)
     
     def user_choice(self) -> bool:
         """Returns False if hit, and returns True if stand."""
