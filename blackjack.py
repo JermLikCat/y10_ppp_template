@@ -59,6 +59,7 @@ class BlackjackRound:
         print(self.dealer_deck)
         # Initialize empty player cards
         self.player_deck = Deck()
+        print(self.player_deck, self.player_deck.cards)
     
     def user_choice(self) -> bool:
         """Returns False if hit, and returns True if stand."""
