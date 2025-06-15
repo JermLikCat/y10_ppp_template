@@ -1,9 +1,16 @@
 import os
 
+SUITS = ("\u2663", "\u2665", "\u2666", "\u2660")
+RANKS = ('A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K')
+
 class BlackjackGame:
     def __init__(self):
         # Initialize money
         self.player_money = 1000
+        
+        # Initialize card deck
+        self.cards = Deck()
+        self.cards.generate_card_list(SUITS, RANKS)
         
         # Opening screen
         self.display_opening_screen()
@@ -28,24 +35,22 @@ class BlackjackGame:
         while self.player_money > 0:
             bet = self.display_bet_screen(self.player_money)
             self.player_money -= bet
-            round = BlackjackRound(self.player_money, bet)
+            round = BlackjackRound(self.player_money, bet, self.cards) # When cards run out the round automatically refills it
             self.player_money = round.player_money
+            
         print("You ran out of money!")
         
-class BlackjackRound:
-    SUITS = ("\u2663", "\u2665", "\u2666", "\u2660")
-    RANKS = ('A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K')
     
-    def __init__(self, player_money, bet, cards = None, dealer_deck = None, player_deck = None):
+        
+class BlackjackRound:
+    
+    def __init__(self, player_money, bet, cards, dealer_deck = None, player_deck = None):
+        
         os.system('cls' if os.name == 'nt' else 'clear')
         self.player_money = player_money
         self.bet = bet
-        
-        if cards is None:  
-            # Initialize cards
-            self.cards = self.generate_card_list(self.SUITS, self.RANKS)
-        else:
-            self.cards = cards
+
+        self.cards = cards
         
         if dealer_deck is None:
             # Draw dealer cards
@@ -93,7 +98,7 @@ class BlackjackRound:
         self.player_money += self.check_final_outcome(self.bet)
     
     def split_check(self):
-        if self.player_deck.can_split() and self.bet * 2 < self.player_money:
+        if self.player_deck.can_split() and self.bet * 2 <= self.player_money:
             print("Your deck: ")
             self.player_deck.print_deck()
             split = input("Would you like to split? (y/n) ").strip().lower()
@@ -135,13 +140,7 @@ class BlackjackRound:
             return True
         elif choice == "stand":
             return False
-    
-    def generate_card_list(self, suits, ranks):
-        result = []
-        for suit in suits:
-            for rank in ranks:
-                result.append(suit + rank)
-        return Deck(result)
+
     
     def did_bust(self, deck) -> bool:
         if deck.return_value() > 21:
@@ -195,9 +194,14 @@ class Deck:
         from random import randint
         
         for _ in range(quantity):
+            if len(card_deck.cards) < 1:
+                print("Ran out of cards! Reshuffling deck...")
+                card_deck.generate_card_list(SUITS, RANKS)
+
             index = randint(0, len(card_deck.cards) - 1)
             self.cards.append(card_deck.cards[index])
             card_deck.cards.pop(index)
+                
         
     def print_deck(self, hidden: list[int] = None):
         """Displays deck with all indexes in list of int given being hidden"""
@@ -244,5 +248,12 @@ class Deck:
             if self.cards[0][1:] == self.cards[1][1:]:
                 return True
         return False
+    
+    def generate_card_list(self, suits, ranks):
+        result = []
+        for suit in suits:
+            for rank in ranks:
+                result.append(suit + rank)
+        self.cards = result
     
 game = BlackjackGame()
