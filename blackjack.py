@@ -77,10 +77,13 @@ class BlackjackRound:
         if self.player_deck.return_value() == 21:
             print("Blackjack!")
         else:
-            while self.user_choice():
-                # Check if player has lost or won
-                if self.did_bust(self.player_deck) or self.player_deck.return_value() == 21:
-                    break
+            if self.double_down_check() and self.double_down_prompt():
+                self.double_down()
+            else:
+                while self.user_choice():
+                    # Check if player has lost or won
+                    if self.did_bust(self.player_deck) or self.player_deck.return_value() == 21:
+                        break
                 
         # Display dealer's and player's final cards
         print("Your final cards: ")
@@ -118,6 +121,22 @@ class BlackjackRound:
         self.player_deck.cards = [self.player_deck.cards[1]]
         while len(self.player_deck.cards) < 2:
             self.player_deck.draw(self.cards)
+         
+    def double_down_check(self):
+        if self.bet * 2 <= self.player_money:
+            return True
+        else:
+            return False
+       
+    def double_down_prompt(self) -> bool:
+        choice = input("Would you like to double down? (y/n) ").strip().lower()
+        while choice != "y" and choice != "n":
+            print("Invalid input! Please only input 'y' or 'n'.")
+            choice = input("Would you like to double down? (y/n) ").strip().lower()
+        return False if choice == "n" else True
+    
+    def double_down(self):
+        self.player_deck.draw(self.cards)
     
     def user_choice(self) -> bool:
         """Returns False if hit, and returns True if stand."""

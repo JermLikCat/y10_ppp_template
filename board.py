@@ -90,30 +90,114 @@ class Board():
         self.generate_magic_bitboards()
             
     def generate_magic_bitboards(self):
-        self.ROOK_TABLE 
-            
-    def generate_rook_magic_table(self):
-        table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * magicnums.ROOK_SIZE
-        
+        self.ROOK_TABLE = self.generate_magic_table([(1, 0), (0, 1), (-1, 0), (0, -1)], magicnums.ROOK_SIZE, magicnums.ROOK_MOVES)
+        self.BISHOP_TABLE = self.generate_magic_table([(1, 1), (-1, 1), (1, -1), (-1, -1)], magicnums.BISHOP_SIZE, magicnums.BISHOP_MOVES)
+    
+    def generate_magic_table(self, deltas, table_size, magic_data):
+        table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
         for y in range(self.board_height):
             for x in range(self.board_width):
-                index = y * self.board_width + x
-                
-                # Possible rays of the piece
-                rays = magicnums.ROOK_MOVES[index].mask
-                
+                index = self.board_area - y * self.board_width + x - 1
+                magic_data_current = magic_data[index]
+
+                rays = magic_data_current.mask
                 # Loop through all subsets
                 
-                pass
+                # Emulate do while loop
+                blockers = bitboard.Bitboard(0, self.board_width, self.board_height)
+                while True:
+
+                    possible = self.generate_possible_moves(deltas, blockers, index)
+                    print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.shift))
+                    possible.display_bitboard()
+                    print("Blockers:")
+                    blockers.display_bitboard()
+                    
+                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.shift)] = possible
+                    
+                    blockers.value = (blockers.value - rays) & rays;
+                    
+                    if blockers.value == 0:
+                        break
     
-    def generate_bishop_magic_table():
-        pass
+    def generate_possible_moves(self, deltas, blockers, index):
+        final_bb = bitboard.Bitboard(0, self.board_width, self.board_height)
+        for delta in deltas:
+            ray = 1 << (self.board_area - (index + 1))
+
+            while not (ray & blockers.value) and ray < (1 << 64) and ray > 0:
+                endloop = False
+                # Y-delta
+                if delta[0] > 0:
+                    ray = ray >> self.board_width * delta[0]
+                    # Border check
+                    # Number represents:
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 11111111
+                    if ray & 0xFF:
+                        endloop = True
+                elif delta[0] < 0:
+                    ray = ray << -(self.board_width * delta[0])
+                    # Border check
+                    # Number represents:
+                    # 11111111
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    # 00000000
+                    if ray & 0xFF00000000000000:
+                        endloop = True
+                # X-delta
+                if delta[1] > 0:
+                    ray = ray >> delta[1]
+                    # Border check
+                    # Number represents:
+                    # 00000001
+                    # 00000001
+                    # 00000001
+                    # 00000001
+                    # 00000001
+                    # 00000001
+                    # 00000001
+                    # 00000001
+                    if ray & 0x101010101010101:
+                        endloop = True
+                elif delta[1] < 0:
+                    ray = ray << -delta[1]
+                    # Border check
+                    # Number represents:
+                    # 10000000
+                    # 10000000
+                    # 10000000
+                    # 10000000
+                    # 10000000
+                    # 10000000
+                    # 10000000
+                    # 10000000
+                    if ray & 0x8080808080808080:
+                        endloop = True
+                final_bb.value |= ray
+                print("Skbid:")
+                # blockers.display_bitboard()
+                # final_bb.display_bitboard()
+                if endloop:
+                    break
+        return final_bb
+        
     
-    def generate_queen_magic_tables():
-        pass
-    
-    def generate_magic_index(blockers: bitboard.Bitboard, magic_number: int, index_number: int) -> int:
-        # Index bits are actually directly stored as 64 - their real value to decrease amount of operations needed
+    def generate_magic_index(self, blockers: bitboard.Bitboard, magic_number: int, index_number: int) -> int:
+        # Index bits are actually directly stored as (64 - their real value) to decrease amount of operations needed
+        # TODO: Change to wrapping multiplication
+        
         return (blockers.value * magic_number) >> index_number
     
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
