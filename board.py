@@ -92,7 +92,7 @@ class Board():
             
     def generate_magic_bitboards(self):
         self.ROOK_TABLE = self.generate_magic_table([(1, 0), (0, 1), (-1, 0), (0, -1)], magicnums.ROOK_SIZE, magicnums.ROOK_MOVES)
-        self.BISHOP_TABLE = self.generate_magic_table([(1, 1), (-1, 1), (1, -1), (-1, -1)], magicnums.BISHOP_SIZE, magicnums.BISHOP_MOVES)
+        # self.BISHOP_TABLE = self.generate_magic_table([(1, 1), (-1, 1), (1, -1), (-1, -1)], magicnums.BISHOP_SIZE, magicnums.BISHOP_MOVES)
     
     def generate_magic_table(self, deltas, table_size, magic_data):
         table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
@@ -186,9 +186,13 @@ class Board():
                         endloop = True
                 final_bb.value |= ray
                 # blockers.display_bitboard()
-                # final_bb.display_bitboard()
+                
                 if endloop:
                     break
+        print("Possible moves:")
+        final_bb.display_bitboard()
+        print("Blockers:")
+        blockers.display_bitboard()
         return final_bb
         
     
