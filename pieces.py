@@ -14,7 +14,6 @@ class Piece():
         pass
     
     def is_multiple(self, currentpos: tuple[int, int], raypos: tuple[int, int], direction: tuple[int, int], board_length: int, board_width: int) -> bool:
-        print(raypos)
         
         if direction[0] == 0:
             if raypos[0] != 0:
@@ -40,13 +39,12 @@ class Piece():
         
         return True
     
-    def generate_sliding_mask(self, position: tuple[int, int], directions: list[tuple[int, int]], board_length: int, board_width: int):
+    def generate_sliding_mask(self, position: tuple[int, int], deltas: list[tuple[int, int]], board_length: int, board_width: int):
         bitboard = ["0"] * board_length * board_width
-        print(f"Position: {position}")
         
         """
         Generate rays for a sliding piece for use in magic bitboards:
-        e.g. for rook:
+        e.g. for rook in (3, 3):
         . . . . . . . .
         . . # . . . . .
         . # . # # # # .
@@ -61,7 +59,7 @@ class Piece():
             for x in range(board_width):
                 posdiff = (y - position[0], x - position[1])
                 currentpos = (y, x)
-                for direction in directions:
+                for direction in deltas:
                     if self.is_multiple(currentpos, posdiff, direction, board_length, board_width):
                         bitboard[y * board_length + x] = "1"
                         break

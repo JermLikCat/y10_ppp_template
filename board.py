@@ -17,6 +17,10 @@ class Board():
         self.side = side
         self.wmaterial = []
         self.bmaterial = []
+        self.board: list
+        self.board_area: int
+        self.board_width: int
+        self.board_height: int
         
         # Setup pieces, and set board height, width and area
         self.setup_board()
@@ -24,12 +28,10 @@ class Board():
         self.white_bitboard: bitboard.Bitboard = bitboard.Bitboard(0, self.board_width, self.board_height)
         self.black_bitboard: bitboard.Bitboard = bitboard.Bitboard(0, self.board_width, self.board_height)
         self.piece_bitboards: list[bitboard.Bitboard] = [bitboard.Bitboard(0, self.board_width, self.board_height)] * 6
-        # self.board = board
         
         self.setup_bitboards(self.board)
-        self.move((0, 2), (3, 2))
-        self.check_move_legal((3, 2), (4, 4))
         self.piece_bitboards[self.ROOK_ID].display_bitboard()
+        self.piece_bitboards[self.KNIGHT_ID].display_bitboard()
         
     # SETUP
     
@@ -77,7 +79,7 @@ class Board():
                 pieces = [0, 1, 2, 3, 4, 5]
                 if piece.id in pieces:
                     piece_bitboards[piece.id] += "1"
-                    pieces.remove(piece.id)
+                    pieces.pop(piece.id)
                 for pid in pieces:
                     piece_bitboards[pid] += "0"
 
@@ -87,12 +89,13 @@ class Board():
             self.piece_bitboards[bitboard].update(int(piece_bitboards[bitboard], 2))
             
         # Generation of magic bitboards
-        
+        print("Loading...")
         self.generate_magic_bitboards()
+        print("Done!")
             
     def generate_magic_bitboards(self):
         self.ROOK_TABLE = self.generate_magic_table([(1, 0), (0, 1), (-1, 0), (0, -1)], magicnums.ROOK_SIZE, magicnums.ROOK_MOVES)
-        # self.BISHOP_TABLE = self.generate_magic_table([(1, 1), (-1, 1), (1, -1), (-1, -1)], magicnums.BISHOP_SIZE, magicnums.BISHOP_MOVES)
+        self.BISHOP_TABLE = self.generate_magic_table([(1, 1), (-1, 1), (1, -1), (-1, -1)], magicnums.BISHOP_SIZE, magicnums.BISHOP_MOVES)
     
     def generate_magic_table(self, deltas, table_size, magic_data):
         table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
@@ -106,10 +109,10 @@ class Board():
                 
                 # Emulate do while loop
                 blockers = bitboard.Bitboard(0, self.board_width, self.board_height)
-                bitboard.Bitboard(rays, 8, 8).display_bitboard()
+
                 while True:
 
-                    possible = self.generate_possible_moves(deltas, blockers, 64-(index+1))
+                    possible = self.generate_possible_moves(deltas, blockers, index)
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.shift)] = possible
                     
@@ -121,80 +124,96 @@ class Board():
     def generate_possible_moves(self, deltas, blockers, index):
         final_bb = bitboard.Bitboard(0, self.board_width, self.board_height)
         for delta in deltas:
-            ray = 1 << (self.board_area - (index + 1))
+            ray = 1 << index
 
-            while not (ray & blockers.value) and ray < (1 << 64) and ray > 0:
-                endloop = False
+            while not (ray & blockers.value):
+                
+                # Apply operations
+                
                 # Y-delta
                 
                 if delta[0] > 0:
-                    ray = ray >> self.board_width * delta[0]
-                    # Border check
-                    # Number represents:
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 11111111
-                    if ray & 0xFF:
-                        endloop = True
+                    ray = ray << self.board_width * delta[0]
                 elif delta[0] < 0:
-                    ray = ray << -(self.board_width * delta[0])
-                    # Border check
-                    # Number represents:
-                    # 11111111
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    # 00000000
-                    if ray & 0xFF00000000000000:
-                        endloop = True
+                    ray = ray >> -(self.board_width * delta[0])
+                   
                 # X-delta
                 if delta[1] > 0:
-                    ray = ray >> delta[1]
-                    # Border check
-                    # Number represents:
-                    # 00000001
-                    # 00000001
-                    # 00000001
-                    # 00000001
-                    # 00000001
-                    # 00000001
-                    # 00000001
-                    # 00000001
-                    if ray & 0x101010101010101:
-                        endloop = True
+                    ray = ray << delta[1]
                 elif delta[1] < 0:
-                    ray = ray << -delta[1]
-                    # Border check
-                    # Number represents:
-                    # 10000000
-                    # 10000000
-                    # 10000000
-                    # 10000000
-                    # 10000000
-                    # 10000000
-                    # 10000000
-                    # 10000000
-                    if ray & 0x8080808080808080:
-                        endloop = True
-                final_bb.value |= ray
-                # blockers.display_bitboard()
+                    ray = ray >> -delta[1]
+                    
+                # Number represents:
+                # 10000000
+                # 10000000
+                # 10000000
+                # 10000000
+                # 10000000
+                # 10000000
+                # 10000000
+                # 10000000
+                LEFT_BORDER = 0x8080808080808080
                 
-                if endloop:
+                # Number represents:
+                # 00000001
+                # 00000001
+                # 00000001
+                # 00000001
+                # 00000001
+                # 00000001
+                # 00000001
+                # 00000001
+                RIGHT_BORDER = 0x101010101010101
+                
+                # Number represents:
+                # 11111111
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                TOP_BORDER = 0xFF00000000000000
+                
+                # Number represents:
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                # 00000000
+                # 11111111
+                BOTTOM_BORDER = 0xFF
+                
+                # Check borders
+                if delta[0] > 0:
+                    if ray & BOTTOM_BORDER:
+                        break
+                elif delta[0] < 0:
+                    if ray & TOP_BORDER:
+                        break
+                    
+                if delta[1] > 0:
+                    if ray & RIGHT_BORDER:
+                        break
+                elif delta[1] < 0:
+                    if ray & LEFT_BORDER:
+                        break
+                
+                # Boundary check
+                if ray <= 0 or ray >= (1 << 64):
                     break
-        print("Possible moves:")
-        final_bb.display_bitboard()
-        print("Blockers:")
-        blockers.display_bitboard()
-        return final_bb
-        
+                
+                # break if touching a blocker
+                if ray & blockers.value:
+                    break
+                
+                # Update result
+                final_bb.value |= ray
+
+        return final_bb     
     
     def generate_magic_index(self, blockers: bitboard.Bitboard, magic_number: int, index_number: int) -> int:
         # Index bits are actually directly stored as (64 - their real value) to decrease amount of operations needed
