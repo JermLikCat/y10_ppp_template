@@ -71,8 +71,6 @@ class Piece():
         
         bitboard = int(bitboard, 2)
         return bitboard
-    
-    
 
         
 class Pawn(Piece):

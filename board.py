@@ -27,12 +27,14 @@ class Board():
         
         self.white_bitboard: bitboard.Bitboard = bitboard.Bitboard(0, self.board_width, self.board_height)
         self.black_bitboard: bitboard.Bitboard = bitboard.Bitboard(0, self.board_width, self.board_height)
-        self.piece_bitboards: list[bitboard.Bitboard] = [bitboard.Bitboard(0, self.board_width, self.board_height)] * 6
+        self.piece_bitboards: list[bitboard.Bitboard] = [bitboard.Bitboard(0, self.board_width, self.board_height),
+                                                         bitboard.Bitboard(0, self.board_width, self.board_height),
+                                                         bitboard.Bitboard(0, self.board_width, self.board_height),
+                                                         bitboard.Bitboard(0, self.board_width, self.board_height),
+                                                         bitboard.Bitboard(0, self.board_width, self.board_height),
+                                                         bitboard.Bitboard(0, self.board_width, self.board_height)]
         
         self.setup_bitboards(self.board)
-        self.piece_bitboards[self.ROOK_ID].display_bitboard()
-        self.piece_bitboards[self.KNIGHT_ID].display_bitboard()
-        
     # SETUP
     
     def setup_board(self):
@@ -82,11 +84,11 @@ class Board():
                     pieces.pop(piece.id)
                 for pid in pieces:
                     piece_bitboards[pid] += "0"
-
+                    
         self.white_bitboard.update(int(white_bitboard, 2))
         self.black_bitboard.update(int(black_bitboard, 2))
-        for bitboard in range(len(piece_bitboards)):
-            self.piece_bitboards[bitboard].update(int(piece_bitboards[bitboard], 2))
+        for i, bitboard in enumerate(piece_bitboards):
+            self.piece_bitboards[i].update(int(bitboard, 2))
             
         # Generation of magic bitboards
         print("Loading...")
