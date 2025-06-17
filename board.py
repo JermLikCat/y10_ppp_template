@@ -1,5 +1,6 @@
 import bitboard
 import magicnums
+import ctypes
 
 class Board():
     """ Piece IDs: Pawn: 0, Bishop: 1, Rook: 2, Knight: 3, Queen: 4, King: 5, Empty: 6"""
@@ -97,21 +98,18 @@ class Board():
         table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
         for y in range(self.board_height):
             for x in range(self.board_width):
-                index = self.board_area - y * self.board_width + x - 1
-                magic_data_current = magic_data[index]
+                index = y * self.board_width + x
+                magic_data_current = magic_data[(index)]
 
                 rays = magic_data_current.mask
                 # Loop through all subsets
                 
                 # Emulate do while loop
                 blockers = bitboard.Bitboard(0, self.board_width, self.board_height)
+                blockers.display_bitboard()
                 while True:
 
-                    possible = self.generate_possible_moves(deltas, blockers, index)
-                    print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.shift))
-                    possible.display_bitboard()
-                    print("Blockers:")
-                    blockers.display_bitboard()
+                    possible = self.generate_possible_moves(deltas, blockers, 64-(index+1))
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.shift)] = possible
                     
@@ -128,6 +126,7 @@ class Board():
             while not (ray & blockers.value) and ray < (1 << 64) and ray > 0:
                 endloop = False
                 # Y-delta
+                
                 if delta[0] > 0:
                     ray = ray >> self.board_width * delta[0]
                     # Border check
@@ -186,7 +185,6 @@ class Board():
                     if ray & 0x8080808080808080:
                         endloop = True
                 final_bb.value |= ray
-                print("Skbid:")
                 # blockers.display_bitboard()
                 # final_bb.display_bitboard()
                 if endloop:
@@ -198,7 +196,7 @@ class Board():
         # Index bits are actually directly stored as (64 - their real value) to decrease amount of operations needed
         # TODO: Change to wrapping multiplication
         
-        return (blockers.value * magic_number) >> index_number
+        return ctypes.c_uint64((blockers.value * magic_number)).value >> (index_number)
     
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         piece = self.board[p1[0]][p1[1]]
