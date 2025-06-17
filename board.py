@@ -106,7 +106,7 @@ class Board():
                 
                 # Emulate do while loop
                 blockers = bitboard.Bitboard(0, self.board_width, self.board_height)
-                blockers.display_bitboard()
+                
                 while True:
 
                     possible = self.generate_possible_moves(deltas, blockers, 64-(index+1))
