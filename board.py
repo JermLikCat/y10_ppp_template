@@ -243,7 +243,7 @@ class Board():
     def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
 
-        index = p1[0] * self.board_width + p1[1]
+        index = 64 - (p1[0] * self.board_width + p1[1] + 1)
         
         if piece.id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
@@ -256,7 +256,7 @@ class Board():
             blockers.display_bitboard()
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
             possible_moves.display_bitboard()
-            bitboard.Bitboard(0x004040404040403E, 8, 8).display_bitboard()
+            bitboard.Bitboard(mask, 8, 8).display_bitboard()
             # Check if move is possible using bitwise AND
             # Check for if take is possible
         
