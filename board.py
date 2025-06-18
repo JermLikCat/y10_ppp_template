@@ -122,7 +122,7 @@ class Board():
 
                     possible = self.generate_possible_moves(deltas, blockers, index)
                     
-                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = bitboard.Bitboard(possible, self.board_width, self.board_height)
+                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
                     
                     blockers.value = (blockers.value - rays) & rays;
                     
