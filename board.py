@@ -147,9 +147,6 @@ class Board():
         for delta in deltas:
             ray = 1 << (self.board_area - index - 1)
             while not (ray & blockers.value):
-                if blockers.value == 36028797018964094:
-                    print(delta)
-                    final_bb.display_bitboard()
                     
                 # Initial border check:
                 if self.border_colliding(ray, delta):
