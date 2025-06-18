@@ -264,7 +264,7 @@ class Board():
         pass
     
     def move(self, p1: tuple[int, int], p2: tuple[int, int]):
-        # TODO: represent boards in integers instead of strings - strings were used for debugging
+
         # Position in the form of (y, x)
         p1piece = self.board[p1[0]][p1[1]]
         p2piece = self.board[p2[0]][p2[1]]
@@ -293,6 +293,7 @@ class Board():
             
         # Update piece bitboards
         bothmoves = p1move & p2move
+        bitboard.Bitboard(bothmoves, 8, 8).display_bitboard()
         if p1piece.id != 6:
             self.piece_bitboards[p1piece.id] ^= bothmoves
         if p2piece.id != 6:
