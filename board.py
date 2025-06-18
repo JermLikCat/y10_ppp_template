@@ -128,6 +128,9 @@ class Board():
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
                     print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number))
+                    possible.display_bitboard()
+                    import os
+                    os.system("clear")
                     blockers.value = (blockers.value - rays) & rays;
                     
                     if blockers.value == 0:
