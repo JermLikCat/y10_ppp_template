@@ -39,7 +39,7 @@ class Board():
         
         self.setup_bitboards(self.board)
         
-        self.check_move_legal((7, 0), (3, 0))
+        self.check_move_legal((7, 7), (3, 7))
     # SETUP
     
     def setup_board(self):
