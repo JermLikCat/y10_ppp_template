@@ -3,7 +3,7 @@ import magicnums
 import ctypes
 
 # RULES:
-# BOTTOM-RIGHT is INDEX 0, GOING FROM RIGHT TO LEFT IN A BITBOARD
+# TOP-LEFT is INDEX 0, GOING FROM LEFT TO RIGHT IN A BITBOARD
 
 
 
@@ -45,6 +45,8 @@ class Board():
         self.setup_bitboards(self.board)
         
         self.check_move_legal((7, 0), (3, 0))
+        for bb in magicnums.ROOK_MOVES:
+            bitboard.Bitboard(bb.mask, 8, 8).display_bitboard()
     # SETUP
     
     def setup_board(self):
@@ -74,8 +76,8 @@ class Board():
         white_bitboard = ""
         black_bitboard = ""
         piece_bitboards = ["", "", "", "", "", ""]
-        for row in reversed(board):
-            for piece in reversed(row):
+        for row in board:
+            for piece in row:
                 # First recognize if piece is black or white
                 if piece.side == "w":
                     white_bitboard += "1"
