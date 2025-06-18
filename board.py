@@ -276,43 +276,29 @@ class Board():
                 self.wmaterial.append(p2piece)
 
         # Update bitboards
-        # Make new bitboard to represent move
-        movebb = ["0"] * self.board_area
+        # Set indices
         p1index = p1[0] * self.board_height + p1[1]
         p2index = p2[0] * self.board_height + p2[1]
-        movebb[p1index] = "1"
-        movebb[p2index] = "1"
-        movebb = "".join(movebb)
-        print(movebb)
-        movebb = int(movebb, 2)
-
-        takenbb = ["0"] * self.board_area
-        takenbb[p2index] = "1"
-        takenbb = "".join(takenbb)
-        takenbb = int(takenbb, 2)
-
-        # Update white and black bitboards of the attacked piece
-        if p2piece.side == "w":
-            self.white_bitboard.update(self.white_bitboard.value ^ takenbb)
-        elif p2piece.side == "b":
-            self.black_bitboard.update(self.black_bitboard.value ^ takenbb)
         
-        # Update white and black bitboards of the moving piece
+        # Update whtie and black bitboards
+        p1move = 1 >> p1index
+        p2move = 1 >> p2index
+        
         if p1piece.side == "w":
-            self.white_bitboard.update(self.white_bitboard.value ^ takenbb)
-            self.white_bitboard.update(self.white_bitboard.value | takenbb)
-        elif p1piece.side == "b":
-            self.black_bitboard.update(self.black_bitboard.value ^ movebb)
-            self.black_bitboard.update(self.black_bitboard.value | takenbb)
-        
-        # If piece is taken update bitboard of taken piece first
-        if p2piece.id != 6:
-            self.piece_bitboards[p2piece.id].update(self.piece_bitboards[p2piece.id].value ^ takenbb)
-        # Then update bitboard of moved piece
+            self.white_bitboard.update((p1move ^ self.white_bitboard.value) & p2move)
+            self.black_bitboard.value = (self.black_bitboard.value ^ self.white_bitboard.value) ^ self.black_bitboard.value
+        else:
+            self.black_bitboard.update((p1move ^ self.black_bitboard.value) & p2move)
+            self.white_bitboard.value = (self.black_bitboard.value ^ self.white_bitboard.value) ^ self.white_bitboard.value
+            
+        # Update piece bitboards
+        bothmoves = p1move & p2move
         if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id].update(self.piece_bitboards[p1piece.id].value ^ movebb)
+            self.piece_bitboards[p1piece.id] ^= bothmoves
+        if p2piece.id != 6:
+            self.piece_bitboards[p2piece.id] ^= p2move
 
-        # Move piece
+        # Move piece on list
         self.board[p2[0]][p2[1]] = self.board[p1[0]][p1[1]]
         import pieces
         self.board[p1[0]][p1[1]] = pieces.EmptyPiece(self)
