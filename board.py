@@ -134,7 +134,7 @@ class Board():
                     blockers.value = (blockers.value - rays) & rays;
                     if blockers.value == 36028797018964094:
                         print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number))
-                        possblocible.display_bitboard()
+                        possible.display_bitboard()
                     if blockers.value == 0:
                         break
         return table
