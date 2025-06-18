@@ -112,9 +112,8 @@ class Board():
     def generate_magic_table(self, deltas, table_size, magic_data):
         
         # Generate empty table
-        table = [bitboard.Bitboard(0, self.board_width, self.board_height)]
-        for _ in range(table_size):
-            table.append(bitboard.Bitboard(0, self.board_width, self.board_height))
+        table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
+
         for y in range(self.board_height):
             for x in range(self.board_width):
                 index = y * self.board_width + x
