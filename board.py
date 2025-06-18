@@ -3,7 +3,7 @@ import magicnums
 import ctypes
 
 # RULES:
-# TOP-LEFT is INDEX 0, GOING FROM LEFT TO RIGHT IN A BITBOARD
+# BOTTOM-RIGHT is INDEX 0, GOING FROM LEFT TO RIGHT IN A BITBOARD
 
 
 
@@ -145,9 +145,10 @@ class Board():
     def generate_possible_moves(self, deltas, blockers, index):
         final_bb = bitboard.Bitboard(0, self.board_width, self.board_height)
         for delta in deltas:
-            ray = 1 << index
+            ray = 1 << (64-index)
             while not (ray & blockers.value):
-                
+                if blockers.value == 36028797018964094:
+                    bitboard.Bitboard(ray, 8, 8).display_bitboard()
                 # Apply operations
                 
                 # Y-delta
