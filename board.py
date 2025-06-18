@@ -45,8 +45,6 @@ class Board():
         self.setup_bitboards(self.board)
         
         self.check_move_legal((7, 0), (3, 0))
-        for bb in magicnums.ROOK_MOVES:
-            bitboard.Bitboard(bb.mask, 8, 8).display_bitboard()
     # SETUP
     
     def setup_board(self):
