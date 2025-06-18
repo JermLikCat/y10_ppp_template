@@ -44,7 +44,8 @@ class Board():
         
         self.setup_bitboards(self.board)
         
-        self.check_move_legal((7, 0), (3, 0))
+        print(self.check_move_legal((7, 2), (5, 0)))
+        print(self.check_move_legal((7, 2), (6, 3)))
     # SETUP
     
     def setup_board(self):
@@ -58,7 +59,7 @@ class Board():
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
-            [pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
+            [pieces.Pawn(self, "w"), pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
             [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
         ]
         
@@ -66,7 +67,9 @@ class Board():
         self.board_height = len(self.board)
         self.board_width = len(self.board[0])
         self.board_area = self.board_height * self.board_width
-
+        
+        
+        
     def setup_bitboards(self, board):
         
         # Initial generation of bitboards
@@ -167,12 +170,12 @@ class Board():
                 if ray <= 0 or ray >= (1 << 64):
                     break
                 
+                # Update result
+                final_bb.value |= ray
+                
                 # break if touching a blocker
                 if ray & blockers.value:
                     break
-                
-                # Update result
-                final_bb.value |= ray
 
         return final_bb     
     
@@ -248,12 +251,14 @@ class Board():
         
         # If piece is sliding
         if piece.id in [1, 2, 4]:
-            self.check_sliding_move_legal(piece, p1, p2)
+            return self.check_sliding_move_legal(piece, p1, p2)
             
     def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
 
         index = (p1[0] * self.board_width + p1[1])
+        finalindex = (p2[0] * self.board_width + p2[1])
+        final_bit_shift = (64 - (finalindex + 1))
         
         if piece.id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
@@ -261,13 +266,33 @@ class Board():
             offset = magicnums.ROOK_MOVES[index].offset
             mask = magicnums.ROOK_MOVES[index].mask
             blockers = bitboard.Bitboard((self.white_bitboard.value | self.black_bitboard.value) & mask, self.board_width, self.board_height)
-            self.white_bitboard.display_bitboard()
-            self.black_bitboard.display_bitboard()
+
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
-            possible_moves.display_bitboard()
-            bitboard.Bitboard(mask, 8, 8).display_bitboard()
-            # Check if move is possible using bitwise AND
-            # Check for if take is possible
+            
+            # Remove own pieces from possible moves
+            if piece.side == "w":
+                possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
+            elif piece.side == "b":
+                possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
+
+        elif piece.id == self.BISHOP_ID:
+            index_number = magicnums.BISHOP_MOVES[index].index_number
+            magic_number = magicnums.BISHOP_MOVES[index].magic
+            offset = magicnums.BISHOP_MOVES[index].offset
+            mask = magicnums.BISHOP_MOVES[index].mask
+            blockers = bitboard.Bitboard((self.white_bitboard.value | self.black_bitboard.value) & mask, self.board_width, self.board_height)
+
+            possible_moves = self.BISHOP_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
+            
+            # Remove own pieces from possible moves
+            if piece.side == "w":
+                possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
+            elif piece.side == "b":
+                possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
+
+        return True if ((1 << final_bit_shift) & possible_moves.value) else False
+
+
         
     def generate_pseudolegal_moves(self):
         pass
