@@ -2,6 +2,11 @@ import bitboard
 import magicnums
 import ctypes
 
+# RULES:
+# BOTTOM-RIGHT is INDEX 0, GOING FROM RIGHT TO LEFT IN A BITBOARD
+
+
+
 class Board():
     """ Piece IDs: Pawn: 0, Bishop: 1, Rook: 2, Knight: 3, Queen: 4, King: 5, Empty: 6"""
     PAWN_ID = 0
@@ -69,8 +74,8 @@ class Board():
         white_bitboard = ""
         black_bitboard = ""
         piece_bitboards = ["", "", "", "", "", ""]
-        for row in board:
-            for piece in row:
+        for row in reversed(board):
+            for piece in reversed(row):
                 # First recognize if piece is black or white
                 if piece.side == "w":
                     white_bitboard += "1"
