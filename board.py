@@ -39,7 +39,7 @@ class Board():
         
         self.setup_bitboards(self.board)
         
-        self.check_move_legal((7, 7), (3, 7))
+        self.check_move_legal((7, 0), (3, 0))
     # SETUP
     
     def setup_board(self):
@@ -242,13 +242,17 @@ class Board():
             
     def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
-        mask = piece.generate_sliding_mask((p1[0], p1[1]), piece.DIRECTIONS, self.board_height, self.board_width)
+
         index = p1[0] * self.board_width + p1[1]
         
         if piece.id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
             magic_number = magicnums.ROOK_MOVES[index].magic
-            blockers = bitboard.Bitboard((self.white_bitboard.value & self.black_bitboard.value) & mask.value, self.board_width, self.board_height)
+            mask = magicnums.ROOK_MOVES[index].mask
+            blockers = bitboard.Bitboard((self.white_bitboard.value & self.black_bitboard.value) & mask, self.board_width, self.board_height)
+            self.white_bitboard.display_bitboard()
+            self.black_bitboard.display_bitboard()
+            print("b")
             blockers.display_bitboard()
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
             possible_moves.display_bitboard()
