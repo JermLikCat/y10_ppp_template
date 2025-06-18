@@ -8,7 +8,7 @@ from dataclasses import dataclass
 class MagicData:
     mask: int
     magic: int
-    shift: int
+    index_number: int
     offset: int
     
 ROOK_MOVES = [

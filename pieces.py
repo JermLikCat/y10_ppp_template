@@ -1,4 +1,5 @@
 import board
+import bitboard
 # Use a bitboard for pieces!
 class Piece():
     def __init__(self, board: board.Board, side: str, id: int):
@@ -13,7 +14,7 @@ class Piece():
         """Encodes move into an integer from algebraic notation. In the form of: piece_type - rank (as required) - location_y - location_x"""
         pass
     
-    def is_multiple(self, currentpos: tuple[int, int], raypos: tuple[int, int], direction: tuple[int, int], board_length: int, board_width: int) -> bool:
+    def is_multiple(self, currentpos: tuple[int, int], raypos: tuple[int, int], direction: tuple[int, int], board_height: int, board_width: int) -> bool:
         
         if direction[0] == 0:
             if raypos[0] != 0:
@@ -21,7 +22,7 @@ class Piece():
         else:
             if raypos[0] % direction[0] != 0:
                 return False
-            if currentpos[0] == 0 or currentpos[0] == board_width - 1:
+            if currentpos[0] == 0 or currentpos[0] == board_height - 1:
                 return False
         
         if direction[1] == 0:
@@ -30,7 +31,7 @@ class Piece():
         else:
             if raypos[1] % direction[1] != 0:
                 return False
-            if currentpos[1] == 0 or currentpos[1] == board_length - 1:
+            if currentpos[1] == 0 or currentpos[1] == board_width - 1:
                 return False
             
         if direction[0] != 0 and direction[1] != 0:
@@ -39,11 +40,11 @@ class Piece():
         
         return True
     
-    def generate_sliding_mask(self, position: tuple[int, int], deltas: list[tuple[int, int]], board_length: int, board_width: int):
-        bitboard = ["0"] * board_length * board_width
+    def generate_sliding_mask(self, position: tuple[int, int], deltas: list[tuple[int, int]], board_height: int, board_width: int):
+        bb = ["0"] * board_height * board_width
         
         """
-        Generate rays for a sliding piece for use in magic bitboards:
+        Generate rays for a sliding piece for use in magic bbs:
         e.g. for rook in (3, 3):
         . . . . . . . .
         . . # . . . . .
@@ -55,22 +56,22 @@ class Piece():
         . . . . . . . .
         """
         
-        for y in range(board_length):
+        for y in range(board_height):
             for x in range(board_width):
                 posdiff = (y - position[0], x - position[1])
                 currentpos = (y, x)
                 for direction in deltas:
-                    if self.is_multiple(currentpos, posdiff, direction, board_length, board_width):
-                        bitboard[y * board_length + x] = "1"
+                    if self.is_multiple(currentpos, posdiff, direction, board_height, board_width):
+                        bb[y * board_height + x] = "1"
                         break
                   
         # Remove piece itself
-        bitboard[position[0] * board_length + position[1]] = "0"
+        bb[position[0] * board_height + position[1]] = "0"
         
-        bitboard = "".join(bitboard)
+        bb = "".join(bb)
         
-        bitboard = int(bitboard, 2)
-        return bitboard
+        bb = int(bb, 2)
+        return bitboard.Bitboard(bb, board_width, board_height)
 
         
 class Pawn(Piece):

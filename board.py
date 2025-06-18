@@ -21,6 +21,8 @@ class Board():
         self.board_area: int
         self.board_width: int
         self.board_height: int
+        self.ROOK_TABLE: list
+        self.BISHOP_TABLE: list
         
         # Setup pieces, and set board height, width and area
         self.setup_board()
@@ -116,7 +118,7 @@ class Board():
 
                     possible = self.generate_possible_moves(deltas, blockers, index)
                     
-                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.shift)] = possible
+                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
                     
                     blockers.value = (blockers.value - rays) & rays;
                     
@@ -233,7 +235,15 @@ class Board():
     def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
         mask = piece.generate_sliding_mask((p1[0], p1[1]), piece.DIRECTIONS, self.board_height, self.board_width)
-        lookup_table = "TODO"
+        index = p1[0] * self.board_width + p1[1]
+        
+        if piece.id == self.ROOK_ID:
+            index_number = magicnums.ROOK_MOVES[index].index_number
+            magic_number = magicnums.ROOK_MOVES[index].magic
+            blockers = bitboard.Bitboard((self.white_bitboard.value & self.black_bitboard.value) & mask, self.board_width, self.board_height)
+            possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
+            # Check if move is possible using bitwise AND
+            # Check for if take is possible
         
     def generate_pseudolegal_moves(self):
         pass
