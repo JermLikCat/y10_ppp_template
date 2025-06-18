@@ -105,7 +105,7 @@ class Board():
         self.BISHOP_TABLE = self.generate_magic_table([(1, 1), (-1, 1), (1, -1), (-1, -1)], magicnums.BISHOP_SIZE, magicnums.BISHOP_MOVES)
     
     def generate_magic_table(self, deltas, table_size, magic_data):
-        table = [bitboard.Bitboard(0, self.board_width, self.board_height)] * table_size
+        table = [bitboard.Bitboard(0, self.board_width, self.board_height) for _ in range(table_size)]
         for y in range(self.board_height):
             for x in range(self.board_width):
                 index = y * self.board_width + x
@@ -128,6 +128,7 @@ class Board():
                     
                     if blockers.value == 0:
                         break
+        return table
     
     def generate_possible_moves(self, deltas, blockers, index):
         final_bb = bitboard.Bitboard(0, self.board_width, self.board_height)
