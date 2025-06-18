@@ -128,7 +128,9 @@ class Board():
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
                     blockers.value = (blockers.value - rays) & rays;
-                    
+                    if self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number) == 2032:
+                        print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number))
+                        possible.display_bitboard()
                     if blockers.value == 0:
                         break
         return table
@@ -253,9 +255,10 @@ class Board():
             self.white_bitboard.display_bitboard()
             self.black_bitboard.display_bitboard()
             print("b")
-            blockers.display_bitboard()
+            print(blockers.value)
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
             possible_moves.display_bitboard()
+            print(self.generate_magic_index(blockers, magic_number, index_number))
             bitboard.Bitboard(mask, 8, 8).display_bitboard()
             # Check if move is possible using bitwise AND
             # Check for if take is possible
