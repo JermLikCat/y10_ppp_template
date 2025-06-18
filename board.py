@@ -128,7 +128,7 @@ class Board():
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
                     blockers.value = (blockers.value - rays) & rays;
-                    if self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number) == 2032:
+                    if blockers.value == 9079538323755630848:
                         print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number))
                         possible.display_bitboard()
                     if blockers.value == 0:
@@ -245,7 +245,7 @@ class Board():
     def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
 
-        index = 64 - (p1[0] * self.board_width + p1[1] + 1)
+        index = (p1[0] * self.board_width + p1[1])
         
         if piece.id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
