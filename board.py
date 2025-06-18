@@ -150,6 +150,11 @@ class Board():
                 if blockers.value == 36028797018964094:
                     print(delta)
                     final_bb.display_bitboard()
+                    
+                # Initial border check:
+                if self.border_colliding(ray, delta):
+                    break
+                
                 # Apply operations
                 
                 # Y-delta
@@ -164,65 +169,10 @@ class Board():
                     ray = ray >> delta[1]
                 elif delta[1] < 0:
                     ray = ray << -delta[1]
-                    
-                # Number represents:
-                # 10000000
-                # 10000000
-                # 10000000
-                # 10000000
-                # 10000000
-                # 10000000
-                # 10000000
-                # 10000000
-                LEFT_BORDER = 0x8080808080808080
                 
-                # Number represents:
-                # 00000001
-                # 00000001
-                # 00000001
-                # 00000001
-                # 00000001
-                # 00000001
-                # 00000001
-                # 00000001
-                RIGHT_BORDER = 0x101010101010101
-                
-                # Number represents:
-                # 11111111
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                TOP_BORDER = 0xFF00000000000000
-                
-                # Number represents:
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                # 00000000
-                # 11111111
-                BOTTOM_BORDER = 0xFF
-                
-                # Check borders
-                if delta[0] > 0:
-                    if ray & BOTTOM_BORDER:
-                        break
-                elif delta[0] < 0:
-                    if ray & TOP_BORDER:
-                        break
-                    
-                if delta[1] > 0:
-                    if ray & RIGHT_BORDER:
-                        break
-                elif delta[1] < 0:
-                    if ray & LEFT_BORDER:
-                        break
+                # Secondary border check
+                if self.border_colliding(ray, delta):
+                    break
                 
                 # Boundary check
                 if ray <= 0 or ray >= (1 << 64):
@@ -236,6 +186,67 @@ class Board():
                 final_bb.value |= ray
 
         return final_bb     
+    
+    def border_colliding(self, ray, delta):
+        # Number represents:
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        LEFT_BORDER = 0x8080808080808080
+        
+        # Number represents:
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        RIGHT_BORDER = 0x101010101010101
+        
+        # Number represents:
+        # 11111111
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        TOP_BORDER = 0xFF00000000000000
+        
+        # Number represents:
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        # 00000000
+        # 11111111
+        BOTTOM_BORDER = 0xFF
+        
+        # Check borders
+        if delta[0] > 0:
+            if ray & BOTTOM_BORDER:
+                return True
+        elif delta[0] < 0:
+            if ray & TOP_BORDER:
+                return True
+            
+        if delta[1] > 0:
+            if ray & RIGHT_BORDER:
+                return True
+        elif delta[1] < 0:
+            if ray & LEFT_BORDER:
+                return True
+        return False
     
     def generate_magic_index(self, blockers: bitboard.Bitboard, magic_number: int, index_number: int) -> int:
         # Index bits are actually directly stored as (64 - their real value) to decrease amount of operations needed
