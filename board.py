@@ -260,7 +260,7 @@ class Board():
             self.white_bitboard.display_bitboard()
             self.black_bitboard.display_bitboard()
             print("b")
-            print(blockers.value)
+            bitboard.Bitboard(blockers.value, 8, 8).display_bitboard()
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
             possible_moves.display_bitboard()
             print(self.generate_magic_index(blockers, magic_number, index_number))
