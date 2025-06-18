@@ -130,14 +130,9 @@ class Board():
 
                     possible = self.generate_possible_moves(deltas, blockers, index)
                     
-                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
+                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number, magic_data_current.offset)] = possible
                     blockers.value = (blockers.value - rays) & rays;
-                    
-                    if blockers.value == 36028797018964094:
-                        blockers.display_bitboard()
-                        print(index)
-                        print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number))
-                        possible.display_bitboard()
+
                     if blockers.value == 0:
                         break
         return table
@@ -242,11 +237,11 @@ class Board():
                 return True
         return False
     
-    def generate_magic_index(self, blockers: bitboard.Bitboard, magic_number: int, index_number: int) -> int:
+    def generate_magic_index(self, blockers: bitboard.Bitboard, magic_number: int, index_number: int, offset: int) -> int:
         # Index bits are actually directly stored as (64 - their real value) to decrease amount of operations needed
         # TODO: Change to wrapping multiplication
         
-        return ctypes.c_uint64((blockers.value * magic_number)).value >> (index_number)
+        return (ctypes.c_uint64((blockers.value * magic_number)).value >> (index_number)) + offset
     
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         piece = self.board[p1[0]][p1[1]]
@@ -263,15 +258,13 @@ class Board():
         if piece.id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
             magic_number = magicnums.ROOK_MOVES[index].magic
+            offset = magicnums.ROOK_MOVES[index].offset
             mask = magicnums.ROOK_MOVES[index].mask
             blockers = bitboard.Bitboard((self.white_bitboard.value | self.black_bitboard.value) & mask, self.board_width, self.board_height)
             self.white_bitboard.display_bitboard()
             self.black_bitboard.display_bitboard()
-            print("b")
-            print(blockers.value)
-            possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
+            possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
             possible_moves.display_bitboard()
-            print(self.generate_magic_index(blockers, magic_number, index_number))
             bitboard.Bitboard(mask, 8, 8).display_bitboard()
             # Check if move is possible using bitwise AND
             # Check for if take is possible
