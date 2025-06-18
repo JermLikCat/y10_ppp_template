@@ -127,10 +127,6 @@ class Board():
                     possible = self.generate_possible_moves(deltas, blockers, index)
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
-                    print(self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number))
-                    possible.display_bitboard()
-                    import os
-                    os.system("clear")
                     blockers.value = (blockers.value - rays) & rays;
                     
                     if blockers.value == 0:
@@ -253,7 +249,7 @@ class Board():
             index_number = magicnums.ROOK_MOVES[index].index_number
             magic_number = magicnums.ROOK_MOVES[index].magic
             blockers = bitboard.Bitboard((self.white_bitboard.value & self.black_bitboard.value) & mask.value, self.board_width, self.board_height)
-            print(index_number, magic_number)
+            blockers.display_bitboard()
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
             possible_moves.display_bitboard()
             bitboard.Bitboard(0x004040404040403E, 8, 8).display_bitboard()
