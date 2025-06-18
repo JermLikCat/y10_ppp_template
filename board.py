@@ -154,15 +154,15 @@ class Board():
                 # Y-delta
                 
                 if delta[0] > 0:
-                    ray = ray << self.board_width * delta[0]
+                    ray = ray >> self.board_width * delta[0]
                 elif delta[0] < 0:
-                    ray = ray >> -(self.board_width * delta[0])
+                    ray = ray << -(self.board_width * delta[0])
                    
                 # X-delta
                 if delta[1] > 0:
-                    ray = ray << delta[1]
+                    ray = ray >> delta[1]
                 elif delta[1] < 0:
-                    ray = ray >> -delta[1]
+                    ray = ray << -delta[1]
                     
                 # Number represents:
                 # 10000000
