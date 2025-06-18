@@ -249,7 +249,7 @@ class Board():
             print(index_number, magic_number)
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
             possible_moves.display_bitboard()
-            bitboard.Bitboard(0x000101010101017E, 8, 8).display_bitboard()
+            bitboard.Bitboard(0x004040404040403E, 8, 8).display_bitboard()
             # Check if move is possible using bitwise AND
             # Check for if take is possible
         
