@@ -283,6 +283,7 @@ class Board():
         movebb[p1index] = "1"
         movebb[p2index] = "1"
         movebb = "".join(movebb)
+        print(movebb)
         movebb = int(movebb, 2)
 
         takenbb = ["0"] * self.board_area
