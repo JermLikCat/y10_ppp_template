@@ -112,7 +112,7 @@ class Board():
     def generate_magic_table(self, deltas, table_size, magic_data):
         
         # Generate empty table
-        table = []
+        table = [bitboard.Bitboard(0, self.board_width, self.board_height)]
         for _ in range(table_size):
             table.append(bitboard.Bitboard(0, self.board_width, self.board_height))
         for y in range(self.board_height):
@@ -144,7 +144,6 @@ class Board():
         final_bb = bitboard.Bitboard(0, self.board_width, self.board_height)
         for delta in deltas:
             ray = 1 << index
-
             while not (ray & blockers.value):
                 
                 # Apply operations
