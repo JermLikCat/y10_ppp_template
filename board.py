@@ -249,7 +249,7 @@ class Board():
             index_number = magicnums.ROOK_MOVES[index].index_number
             magic_number = magicnums.ROOK_MOVES[index].magic
             mask = magicnums.ROOK_MOVES[index].mask
-            blockers = bitboard.Bitboard((self.white_bitboard.value & self.black_bitboard.value) & mask, self.board_width, self.board_height)
+            blockers = bitboard.Bitboard((self.white_bitboard.value | self.black_bitboard.value) & mask, self.board_width, self.board_height)
             self.white_bitboard.display_bitboard()
             self.black_bitboard.display_bitboard()
             print("b")
