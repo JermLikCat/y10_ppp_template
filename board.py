@@ -113,7 +113,7 @@ class Board():
         for y in range(self.board_height):
             for x in range(self.board_width):
                 index = y * self.board_width + x
-                magic_data_current = magic_data[(index)]
+                magic_data_current = magic_data[index]
 
                 rays = magic_data_current.mask
                 
