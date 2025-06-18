@@ -169,10 +169,7 @@ class Board():
                     ray = ray >> delta[1]
                 elif delta[1] < 0:
                     ray = ray << -delta[1]
-                
-                # Secondary border check
-                if self.border_colliding(ray, delta):
-                    break
+
                 
                 # Boundary check
                 if ray <= 0 or ray >= (1 << 64):
