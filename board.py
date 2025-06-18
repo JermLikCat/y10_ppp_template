@@ -280,7 +280,7 @@ class Board():
         p1index = p1[0] * self.board_height + p1[1]
         p2index = p2[0] * self.board_height + p2[1]
         
-        # Update whtie and black bitboards
+        # Update white and black bitboards
         p1move = 1 >> p1index
         p2move = 1 >> p2index
         
