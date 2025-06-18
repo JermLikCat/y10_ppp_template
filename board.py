@@ -148,6 +148,7 @@ class Board():
             ray = 1 << (self.board_area - index - 1)
             while not (ray & blockers.value):
                 if blockers.value == 36028797018964094:
+                    print(delta)
                     final_bb.display_bitboard()
                 # Apply operations
                 
