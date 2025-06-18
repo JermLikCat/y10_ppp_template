@@ -36,7 +36,10 @@ class Board():
                                                          bitboard.Bitboard(0, self.board_width, self.board_height),
                                                          bitboard.Bitboard(0, self.board_width, self.board_height)]
         
+        
         self.setup_bitboards(self.board)
+        
+        self.check_move_legal((7, 0), (3, 0))
     # SETUP
     
     def setup_board(self):
@@ -50,7 +53,7 @@ class Board():
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
-            [pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
+            [pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
             [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
         ]
         
@@ -109,6 +112,7 @@ class Board():
                 magic_data_current = magic_data[(index)]
 
                 rays = magic_data_current.mask
+                
                 # Loop through all subsets
                 
                 # Emulate do while loop
@@ -118,7 +122,7 @@ class Board():
 
                     possible = self.generate_possible_moves(deltas, blockers, index)
                     
-                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = possible
+                    table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number)] = bitboard.Bitboard(possible, self.board_width, self.board_height)
                     
                     blockers.value = (blockers.value - rays) & rays;
                     
@@ -240,8 +244,10 @@ class Board():
         if piece.id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
             magic_number = magicnums.ROOK_MOVES[index].magic
-            blockers = bitboard.Bitboard((self.white_bitboard.value & self.black_bitboard.value) & mask, self.board_width, self.board_height)
+            blockers = bitboard.Bitboard((self.white_bitboard.value & self.black_bitboard.value) & mask.value, self.board_width, self.board_height)
+            print(index_number, magic_number)
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number)]
+            possible_moves.display_bitboard()
             # Check if move is possible using bitwise AND
             # Check for if take is possible
         
