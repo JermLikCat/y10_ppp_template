@@ -44,8 +44,13 @@ class Board():
         
         self.setup_bitboards(self.board)
         
-        print(self.check_move_legal((7, 2), (5, 0)))
-        print(self.check_move_legal((7, 2), (6, 3)))
+        print(self.check_move_legal((7, 3), (1, 3))) # True
+        print(self.check_move_legal((7, 3), (2, 3))) # True
+        print(self.check_move_legal((7, 3), (0, 3))) # False
+        print(self.check_move_legal((7, 3), (4, 0))) # True
+        print(self.check_move_legal((7, 3), (4, -1))) # False
+        print(self.check_move_legal((7, 3), (6, 2))) # True
+        print(self.check_move_legal((7, 3), (7, 2))) # False
     # SETUP
     
     def setup_board(self):
@@ -59,7 +64,7 @@ class Board():
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
-            [pieces.Pawn(self, "w"), pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
+            [pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
             [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
         ]
         
