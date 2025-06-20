@@ -347,5 +347,4 @@ class Board():
         self.board[p2[0]][p2[1]] = self.board[p1[0]][p1[1]]
         import pieces
         self.board[p1[0]][p1[1]] = pieces.EmptyPiece(self)
-        pass
     
