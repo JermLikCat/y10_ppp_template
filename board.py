@@ -139,8 +139,6 @@ class Board():
                     possible = self.generate_possible_moves(deltas, blockers, index)
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number, magic_data_current.offset)] = possible
-                    if self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number, magic_data_current.offset) == 5084:
-                        blockers.display_bitboard()
                     blockers.value = (blockers.value - rays) & rays;
                     
                     if blockers.value == 0:
@@ -301,9 +299,7 @@ class Board():
             possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
         elif piece.side == "b":
             possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
-        possible_moves.display_bitboard()
-        blockers.display_bitboard()
-        print(self.generate_magic_index(blockers, magic_number, index_number, offset))
+
         return True if ((1 << final_bit_shift) & possible_moves.value) else False
 
 
