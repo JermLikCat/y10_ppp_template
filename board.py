@@ -109,7 +109,7 @@ class Board():
             self.piece_bitboards[i].update(int(bitboard, 2))
             
         # Generation of magic bitboards
-        print("Loading...")
+        print("Loading magic bitboards...")
         self.generate_magic_bitboards()
         print("Done!")
             
