@@ -300,6 +300,7 @@ class Board():
         elif piece.side == "b":
             possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
         possible_moves.display_bitboard()
+        print(self.generate_magic_index(blockers, magic_number, index_number, offset))
         return True if ((1 << final_bit_shift) & possible_moves.value) else False
 
 
