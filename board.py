@@ -251,16 +251,16 @@ class Board():
         
         # If piece is sliding
         if piece.id in [1, 2, 4]:
-            return self.check_sliding_move_legal(piece, p1, p2)
+            return self.check_sliding_move_legal(piece, piece.id, p1, p2)
             
-    def check_sliding_move_legal(self, piece, p1: tuple[int, int], p2: tuple[int, int]):
+    def check_sliding_move_legal(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int]):
         # Magic bitboard method
 
         index = (p1[0] * self.board_width + p1[1])
         finalindex = (p2[0] * self.board_width + p2[1])
         final_bit_shift = (64 - (finalindex + 1))
         
-        if piece.id == self.ROOK_ID:
+        if piece_id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
             magic_number = magicnums.ROOK_MOVES[index].magic
             offset = magicnums.ROOK_MOVES[index].offset
@@ -268,14 +268,8 @@ class Board():
             blockers = bitboard.Bitboard((self.white_bitboard.value | self.black_bitboard.value) & mask, self.board_width, self.board_height)
 
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
-            
-            # Remove own pieces from possible moves
-            if piece.side == "w":
-                possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
-            elif piece.side == "b":
-                possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
 
-        elif piece.id == self.BISHOP_ID:
+        elif piece_id == self.BISHOP_ID:
             index_number = magicnums.BISHOP_MOVES[index].index_number
             magic_number = magicnums.BISHOP_MOVES[index].magic
             offset = magicnums.BISHOP_MOVES[index].offset
@@ -284,12 +278,15 @@ class Board():
 
             possible_moves = self.BISHOP_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
             
-            # Remove own pieces from possible moves
-            if piece.side == "w":
-                possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
-            elif piece.side == "b":
-                possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
-
+        elif piece_id == self.QUEEN_ID:
+            # Queen travels in direction of both rook and bishop
+            return self.check_sliding_move_legal(piece, self.ROOK_ID, p1, p2) | self.check_sliding_move_legal(piece, self.BISHOP_ID, p1, p2)
+        
+        # Remove own pieces from possible moves
+        if piece.side == "w":
+            possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
+        elif piece.side == "b":
+            possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
         return True if ((1 << final_bit_shift) & possible_moves.value) else False
 
 
