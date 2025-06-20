@@ -139,9 +139,10 @@ class Board():
                     possible = self.generate_possible_moves(deltas, blockers, index)
                     
                     table[self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number, magic_data_current.offset)] = possible
-                    blockers.value = (blockers.value - rays) & rays;
                     if self.generate_magic_index(blockers, magic_data_current.magic, magic_data_current.index_number, magic_data_current.offset) == 5084:
                         blockers.display_bitboard()
+                    blockers.value = (blockers.value - rays) & rays;
+                    
                     if blockers.value == 0:
                         break
         return table
