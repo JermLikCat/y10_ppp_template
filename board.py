@@ -2,9 +2,12 @@ import bitboard
 import magicnums
 import ctypes
 
-# RULES:
+# NOTE:
 # TOP-LEFT is INDEX 0, GOING FROM LEFT TO RIGHT IN A BITBOARD
-
+# << MOVES TOWARDS THE LEFT
+# >> MOVES TOWARDS THE RIGHT
+# << self.board_width MOVES ONE ROW UP
+# >> self.board_width MOVES ONE ROW DOWN
 
 
 class Board():
@@ -44,13 +47,20 @@ class Board():
         
         self.setup_bitboards(self.board)
         
-        print(self.check_move_legal((7, 3), (1, 3))) # True
-        print(self.check_move_legal((7, 3), (2, 3))) # True
+        print(self.check_move_legal((6, 0), (5, 0))) # True
+        print(self.check_move_legal((6, 0), (4, 0))) # True
+        print(self.check_move_legal((6, 0), (3, 0))) # False
+        print(self.check_move_legal((5, 1), (4, 1))) # True
+        print(self.check_move_legal((5, 1), (3, 1))) # False
+        print(self.check_move_legal((6, 1), (5, 2))) # True
+        print(self.check_move_legal((6, 1), (5, 1))) # False
+        
+        """print(self.check_move_legal((7, 3), (2, 3))) # True
         print(self.check_move_legal((7, 3), (0, 3))) # False
         print(self.check_move_legal((7, 3), (4, 0))) # True
         print(self.check_move_legal((7, 3), (4, -1))) # False
         print(self.check_move_legal((7, 3), (6, 2))) # True
-        print(self.check_move_legal((7, 3), (7, 2))) # False
+        print(self.check_move_legal((7, 3), (7, 2))) # False"""
     # SETUP
     
     def setup_board(self):
@@ -63,7 +73,7 @@ class Board():
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
-            [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
+            [pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Bishop(self, "b"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
             [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
         ]
@@ -253,6 +263,10 @@ class Board():
     
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
         
+        index = (p1[0] * self.board_width + p1[1])
+        finalindex = (p2[0] * self.board_width + p2[1])
+        final_bit_shift = (64 - (finalindex + 1))
+        
         # Boundary checks - cant be negative or over the width/height of the board
         if p1[0] >= self.board_height or p1[0] < 0 or p2[0] >= self.board_height or p2[0] < 0:
             return False
@@ -262,16 +276,110 @@ class Board():
         piece = self.board[p1[0]][p1[1]]
         
         # If piece is sliding
-        if piece.id in [1, 2, 4]:
-            return self.check_sliding_move_legal(piece, piece.id, p1, p2)
+        if piece.id in [self.BISHOP_ID, self.ROOK_ID, self.QUEEN_ID]:
+            print(piece.id)
+            possible_moves = self.get_possible_sliding_moves(piece, piece.id, p1, p2, index, finalindex, final_bit_shift)
+            return True if ((1 << final_bit_shift) & possible_moves.value) else False
+        elif piece.id in [self.PAWN_ID]:
+            possible_moves = self.get_possible_pawn_moves(piece, piece.id, p1, p2, index, finalindex, final_bit_shift)
+            return True if ((1 << final_bit_shift) & possible_moves.value) else False
             
-    def check_sliding_move_legal(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int]):
+    def get_possible_pawn_moves(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None):
+        THIRD_RANK = 0xff0000
+        SIXTH_RANK = 0xff0000000000
+        # Number represents:
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        # 10000000
+        LEFT_BORDER = 0x8080808080808080
+        
+        # Number represents:
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        # 00000001
+        RIGHT_BORDER = 0x101010101010101
+        if index == None:
+            index = (p1[0] * self.board_width + p1[1])
+        if finalindex == None:
+            finalindex = (p2[0] * self.board_width + p2[1])
+        if final_bit_shift == None:
+            final_bit_shift = (64 - (finalindex + 1))
+        
+        initial_bit_shift = 1 << 64 - (index + 1)
+        
+        # Initialize possible moves
+        possible_moves = bitboard.Bitboard(initial_bit_shift, self.board_width, self.board_height)
+        
+        # Shift possible moves forward/backward depending on side
+        # Don't need to boundary check for above 1 >> 64 or below 0 as pawn promotes on back rank
+        if piece.side == "w":
+            possible_moves.value <<= self.board_width
+            #print("Pushed up")
+            #possible_moves.display_bitboard()
+            # Add double pushes, unless it is blocked by another piece or is not in the second rank
+            # THIRD_RANK is used because we already pushed the pawn up
+            if possible_moves.value & THIRD_RANK and ((possible_moves.value & self.white_bitboard.value) ^ possible_moves.value):
+                possible_moves.value |= (possible_moves.value << self.board_width)
+            #print("Doubled")
+            #possible_moves.display_bitboard()
+            # Account for takes
+            # Make a mask
+            mask = (1 << (64 - (index + 1))) << self.board_width
+            # Taking on left
+            mask |= ((mask << 1) | RIGHT_BORDER) ^ RIGHT_BORDER
+            # Taking on right
+            mask |= ((mask >> 1) | LEFT_BORDER) ^ LEFT_BORDER
+            # Add mask to possible moves
+            possible_moves.value |= (mask & self.black_bitboard.value)
+            #print("Masked")
+            #bitboard.Bitboard(mask, 8, 8).display_bitboard()
+            #possible_moves.display_bitboard()
+            # Remove own pieces from possible moves
+            possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
+            #self.white_bitboard.display_bitboard()
+            #print("Own pieces removed")
+            #possible_moves.display_bitboard()
+        else:
+            possible_moves.value >>= self.board_width
+            
+            # Add double pushes, unless it is blocked by another piece or is not in the second rank
+            # THIRD_RANK is used because we already pushed the pawn up
+            if possible_moves.value & SIXTH_RANK and ((possible_moves.value & self.black_bitboard.value) ^ possible_moves.value):
+                possible_moves.value |= (possible_moves.value << self.board_width)
+            
+            # Account for takes
+            # Make a mask
+            mask = (1 << (64 - (index + 1))) >> self.board_width
+            # Taking on left
+            mask |= ((mask << 1) | RIGHT_BORDER) ^ RIGHT_BORDER
+            # Taking on right
+            mask |= ((mask >> 1) | LEFT_BORDER) ^ LEFT_BORDER
+            # Add mask to possible moves
+            possible_moves.value |= (mask & self.black_bitboard.value)
+            
+            # Remove own pieces from possible moves
+            possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
+        return possible_moves
+    
+    def get_possible_sliding_moves(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None):
+        if index == None:
+            index = (p1[0] * self.board_width + p1[1])
+        if finalindex == None:
+            finalindex = (p2[0] * self.board_width + p2[1])
+        if final_bit_shift == None:
+            final_bit_shift = (64 - (finalindex + 1))
         # Magic bitboard method
 
-        index = (p1[0] * self.board_width + p1[1])
-        finalindex = (p2[0] * self.board_width + p2[1])
-        final_bit_shift = (64 - (finalindex + 1))
-        
         if piece_id == self.ROOK_ID:
             index_number = magicnums.ROOK_MOVES[index].index_number
             magic_number = magicnums.ROOK_MOVES[index].magic
@@ -292,7 +400,7 @@ class Board():
             
         elif piece_id == self.QUEEN_ID:
             # Queen travels in direction of both rook and bishop
-            return self.check_sliding_move_legal(piece, self.ROOK_ID, p1, p2) | self.check_sliding_move_legal(piece, self.BISHOP_ID, p1, p2)
+            return bitboard.Bitboard(self.get_possible_sliding_moves(piece, self.ROOK_ID, p1, p2, index, finalindex, final_bit_shift).value | self.get_possible_sliding_moves(piece, self.BISHOP_ID, p1, p2, index, finalindex, final_bit_shift).value, self.board_width, self.board_height)
         
         # Remove own pieces from possible moves
         if piece.side == "w":
@@ -300,7 +408,8 @@ class Board():
         elif piece.side == "b":
             possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
 
-        return True if ((1 << final_bit_shift) & possible_moves.value) else False
+        return possible_moves
+        
 
 
         
