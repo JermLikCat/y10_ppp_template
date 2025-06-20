@@ -252,6 +252,13 @@ class Board():
         return (ctypes.c_uint64((blockers.value * magic_number)).value >> (index_number)) + offset
     
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
+        
+        # Boundary checks - cant be negative or over the width/height of the board
+        if p1[0] >= self.board_height or p1[0] < 0 or p2[0] >= self.board_height or p2[0] < 0:
+            return False
+        if p1[1] >= self.board_width or p1[1] < 0 or p2[1] >= self.board_width or p2[1] < 0:
+            return False
+        
         piece = self.board[p1[0]][p1[1]]
         
         # If piece is sliding
@@ -292,6 +299,7 @@ class Board():
             possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
         elif piece.side == "b":
             possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
+        possible_moves.display_bitboard()
         return True if ((1 << final_bit_shift) & possible_moves.value) else False
 
 
