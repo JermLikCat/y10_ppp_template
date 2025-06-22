@@ -2,7 +2,7 @@ import bitboard
 import magicnums
 import ctypes
 import lookuptables
-
+import copy
 # NOTE:
 # TOP-LEFT is INDEX 0, GOING FROM LEFT TO RIGHT IN A BITBOARD
 # << MOVES TOWARDS THE LEFT
@@ -47,17 +47,7 @@ class Board():
         
         
         self.setup_bitboards(self.board)
-        
-        print(self.check_move_legal((7, 6), (6, 4))) # False
-        print(self.check_move_legal((7, 1), (5, 0))) # True
-        print(self.check_move_legal((7, 1), (5, 0))) # True
-        
-        """print(self.check_move_legal((7, 3), (2, 3))) # True
-        print(self.check_move_legal((7, 3), (0, 3))) # False
-        print(self.check_move_legal((7, 3), (4, 0))) # True
-        print(self.check_move_legal((7, 3), (4, -1))) # False
-        print(self.check_move_legal((7, 3), (6, 2))) # True
-        print(self.check_move_legal((7, 3), (7, 2))) # False"""
+
     # SETUP
     
     def setup_board(self):
@@ -65,12 +55,12 @@ class Board():
         import pieces
         # Standard Board layout
         self.board: list[list[pieces.Piece]] = [
-            [pieces.Rook(self, "b"), pieces.Knight(self, "b"), pieces.Bishop(self, "b"), pieces.Queen(self, "b"), pieces.King(self, "b"), pieces.Bishop(self, "b"), pieces.Knight(self, "b"), pieces.Rook(self, "b")],
+            [pieces.Rook(self, "b"), pieces.Knight(self, "b"), pieces.Bishop(self, "b"), pieces.Queen(self, "b"), pieces.EmptyPiece(self), pieces.Bishop(self, "b"), pieces.Knight(self, "b"), pieces.Rook(self, "b")],
             [pieces.Pawn(self, "b"), pieces.Pawn(self, "b"), pieces.Pawn(self, "b"), pieces.Pawn(self, "b"), pieces.Pawn(self, "b"), pieces.Pawn(self, "b"), pieces.Pawn(self, "b"), pieces.Pawn(self, "b")],
+            [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.King(self, "b"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
+            [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.Queen(self, "b"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
-            [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
-            [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
-            [pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Bishop(self, "b"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
+            [pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Bishop(self, "b"), pieces.EmptyPiece(self), pieces.Queen(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
             [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
         ]
@@ -281,15 +271,21 @@ class Board():
             possible_moves = self.get_possible_knight_moves(piece, piece.id, p1, p2, index, finalindex, final_bit_shift)
         elif piece.id in [self.KING_ID]:
             possible_moves = self.get_possible_king_moves(piece, piece.id, p1, p2, index, finalindex, final_bit_shift)
-        
         # Remove own piece from possible moves
         if piece.side == "w":
             possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
         else:
             possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
+            
+        # Account for checks - this only checks for pseudo-legal moves
+        # We do this by seeing if the king is in check after testing out the move
+        board, material, white_bitboard, black_bitboard, piece_bitboards = self.move(p1, p2)
+        if self.check_check(piece, p1, p2, index, finalindex, final_bit_shift, white_bitboard, black_bitboard, piece_bitboards):
+            return False
+        
         return True if ((1 << final_bit_shift) & possible_moves.value) else False
     
-    def check_check(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None):
+    def check_check(self, piece, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None, white_bitboard = None, black_bitboard = None, piece_bitboards = None) -> bool:
         """Check for if a king is in check. Take in the King piece and position as parameters. If in check return True. Otherwise, return None."""
         if index == None:
             index = (p1[0] * self.board_width + p1[1])
@@ -297,18 +293,30 @@ class Board():
             finalindex = (p2[0] * self.board_width + p2[1])
         if final_bit_shift == None:
             final_bit_shift = (64 - (finalindex + 1))
-        initial_bit_shift = 1 << 64 - (index + 1)
-        
-        ROOK_ATTACKS = self.get_possible_sliding_moves(piece, self.ROOK_ID, p1, p2, index, finalindex, final_bit_shift)
-        BISHOP_ATTACKS = self.get_possible_sliding_moves(piece, self.ROOK_ID, p1, p2, index, finalindex, final_bit_shift)
+        if white_bitboard == None:
+            white_bitboard = self.white_bitboard
+        if black_bitboard == None:
+            black_bitboard = self.black_bitboard
+        if piece_bitboards == None:
+            piece_bitboards = copy.deepcopy(self.piece_bitboards)
+        ROOK_ATTACKERS = self.get_possible_sliding_moves(piece, self.ROOK_ID, p1, p2, index, finalindex, final_bit_shift, white_bitboard, black_bitboard).value & (piece_bitboards[self.ROOK_ID].value | piece_bitboards[self.QUEEN_ID].value)
+        BISHOP_ATTACKERS = self.get_possible_sliding_moves(piece, self.BISHOP_ID, p1, p2, index, finalindex, final_bit_shift, white_bitboard, black_bitboard).value & (piece_bitboards[self.BISHOP_ID].value | piece_bitboards[self.QUEEN_ID].value)
         # Don't need queen attacks as we can check if queen is in either rook or bishop attacks
-        PAWN_ATTACKS = self.get_possible_pawn_moves(piece, self.PAWN_ID, p1, p2, index, finalindex, final_bit_shift)
-        KNIGHT_ATTACKS = self.get_possible_knight_moves(piece, self.KNIGHT_ID, p1, p2, index, finalindex, final_bit_shift)
+        PAWN_ATTACKERS = self.get_possible_pawn_moves(piece, self.PAWN_ID, p1, p2, index, finalindex, final_bit_shift).value & piece_bitboards[self.PAWN_ID].value
+        KNIGHT_ATTACKERS = self.get_possible_knight_moves(piece, self.KNIGHT_ID, p1, p2, index, finalindex, final_bit_shift).value & piece_bitboards[self.KNIGHT_ID].value
+        bitboard.Bitboard(ROOK_ATTACKERS, 8, 8).display_bitboard()
+        bitboard.Bitboard(BISHOP_ATTACKERS, 8, 8).display_bitboard()
+        bitboard.Bitboard(PAWN_ATTACKERS, 8, 8).display_bitboard()
+        bitboard.Bitboard(KNIGHT_ATTACKERS, 8, 8).display_bitboard()
         if piece.side == "w":
-            pass
-        
+            if ((ROOK_ATTACKERS & black_bitboard.value) | (BISHOP_ATTACKERS & black_bitboard.value) | (PAWN_ATTACKERS & black_bitboard.value) | (KNIGHT_ATTACKERS & black_bitboard.value)):
+                return True
+        elif piece.side == "b":
+            if ((ROOK_ATTACKERS & white_bitboard.value) | (BISHOP_ATTACKERS & white_bitboard.value) | (PAWN_ATTACKERS & white_bitboard.value) | (KNIGHT_ATTACKERS & white_bitboard.value)):
+                return True
+        return False
     
-    def get_possible_pawn_moves(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None):
+    def get_possible_pawn_moves(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None, white_bitboard = None, black_bitboard = None):
         # TODO: EN PASSANT
         THIRD_RANK = 0xff0000
         SIXTH_RANK = 0xff0000000000
@@ -339,7 +347,10 @@ class Board():
             finalindex = (p2[0] * self.board_width + p2[1])
         if final_bit_shift == None:
             final_bit_shift = (64 - (finalindex + 1))
-        
+        if white_bitboard == None:
+            white_bitboard = self.white_bitboard
+        if black_bitboard == None:
+            black_bitboard = self.black_bitboard
         initial_bit_shift = 1 << 64 - (index + 1)
         
         # Initialize possible moves
@@ -349,14 +360,10 @@ class Board():
         # Don't need to boundary check for above 1 >> 64 or below 0 as pawn promotes on back rank
         if piece.side == "w":
             possible_moves.value <<= self.board_width
-            #print("Pushed up")
-            #possible_moves.display_bitboard()
             # Add double pushes, unless it is blocked by another piece or is not in the second rank
             # THIRD_RANK is used because we already pushed the pawn up
-            if possible_moves.value & THIRD_RANK and ((possible_moves.value & self.white_bitboard.value) ^ possible_moves.value):
+            if possible_moves.value & THIRD_RANK and ((possible_moves.value & white_bitboard.value) ^ possible_moves.value):
                 possible_moves.value |= (possible_moves.value << self.board_width)
-            #print("Doubled")
-            #possible_moves.display_bitboard()
             # Account for takes
             # Make a mask
             mask = (1 << (64 - (index + 1))) << self.board_width
@@ -365,19 +372,13 @@ class Board():
             # Taking on right
             mask |= ((mask >> 1) | LEFT_BORDER) ^ LEFT_BORDER
             # Add mask to possible moves
-            possible_moves.value |= (mask & self.black_bitboard.value)
-            #print("Masked")
-            #bitboard.Bitboard(mask, 8, 8).display_bitboard()
-            #possible_moves.display_bitboard()
-            #self.white_bitboard.display_bitboard()
-            #print("Own pieces removed")
-            #possible_moves.display_bitboard()
+            possible_moves.value |= (mask & black_bitboard.value)
         else:
             possible_moves.value >>= self.board_width
             
             # Add double pushes, unless it is blocked by another piece or is not in the second rank
             # THIRD_RANK is used because we already pushed the pawn up
-            if possible_moves.value & SIXTH_RANK and ((possible_moves.value & self.black_bitboard.value) ^ possible_moves.value):
+            if possible_moves.value & SIXTH_RANK and ((possible_moves.value & black_bitboard.value) ^ possible_moves.value):
                 possible_moves.value |= (possible_moves.value << self.board_width)
             
             # Account for takes
@@ -388,16 +389,20 @@ class Board():
             # Taking on right
             mask |= ((mask >> 1) | LEFT_BORDER) ^ LEFT_BORDER
             # Add mask to possible moves
-            possible_moves.value |= (mask & self.black_bitboard.value)
+            possible_moves.value |= (mask & black_bitboard.value)
         return possible_moves
     
-    def get_possible_sliding_moves(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None):
+    def get_possible_sliding_moves(self, piece, piece_id, p1: tuple[int, int], p2: tuple[int, int], index = None, finalindex = None, final_bit_shift = None, white_bitboard = None, black_bitboard = None):
         if index == None:
             index = (p1[0] * self.board_width + p1[1])
         if finalindex == None:
             finalindex = (p2[0] * self.board_width + p2[1])
         if final_bit_shift == None:
             final_bit_shift = (64 - (finalindex + 1))
+        if white_bitboard == None:
+            white_bitboard = self.white_bitboard
+        if black_bitboard == None:
+            black_bitboard = self.black_bitboard
         # Magic bitboard method
 
         if piece_id == self.ROOK_ID:
@@ -405,7 +410,7 @@ class Board():
             magic_number = magicnums.ROOK_MOVES[index].magic
             offset = magicnums.ROOK_MOVES[index].offset
             mask = magicnums.ROOK_MOVES[index].mask
-            blockers = bitboard.Bitboard((self.white_bitboard.value | self.black_bitboard.value) & mask, self.board_width, self.board_height)
+            blockers = bitboard.Bitboard((white_bitboard.value | black_bitboard.value) & mask, self.board_width, self.board_height)
 
             possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
 
@@ -414,13 +419,13 @@ class Board():
             magic_number = magicnums.BISHOP_MOVES[index].magic
             offset = magicnums.BISHOP_MOVES[index].offset
             mask = magicnums.BISHOP_MOVES[index].mask
-            blockers = bitboard.Bitboard((self.white_bitboard.value | self.black_bitboard.value) & mask, self.board_width, self.board_height)
+            blockers = bitboard.Bitboard((white_bitboard.value | black_bitboard.value) & mask, self.board_width, self.board_height)
 
             possible_moves = self.BISHOP_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
             
         elif piece_id == self.QUEEN_ID:
             # Queen travels in direction of both rook and bishop
-            return bitboard.Bitboard(self.get_possible_sliding_moves(piece, self.ROOK_ID, p1, p2, index, finalindex, final_bit_shift).value | self.get_possible_sliding_moves(piece, self.BISHOP_ID, p1, p2, index, finalindex, final_bit_shift).value, self.board_width, self.board_height)
+            return bitboard.Bitboard(self.get_possible_sliding_moves(piece, self.ROOK_ID, p1, p2, index, finalindex, final_bit_shift, white_bitboard, black_bitboard).value | self.get_possible_sliding_moves(piece, self.BISHOP_ID, p1, p2, index, finalindex, final_bit_shift, white_bitboard, black_bitboard).value, self.board_width, self.board_height)
 
 
         return possible_moves
@@ -451,16 +456,22 @@ class Board():
         pass
     
     def move(self, p1: tuple[int, int], p2: tuple[int, int]):
-
+        """Returns new board with move completed, along with material, and new bitboards."""
+        
+        board = copy.deepcopy(self.board)
+        material = []
+       
         # Position in the form of (y, x)
-        p1piece = self.board[p1[0]][p1[1]]
-        p2piece = self.board[p2[0]][p2[1]]
-        # Taking logic
+        p1piece = board[p1[0]][p1[1]]
+        p2piece = board[p2[0]][p2[1]]
+        # Adding to material
         if p2piece.id != 6:
             if p2piece.side == "w":
-                self.bmaterial.append(p2piece)
+                material = copy.deepcopy(self.bmaterial)
+                material.append(p2piece)
             else:
-                self.wmaterial.append(p2piece)
+                material = copy.deepcopy(self.wmaterial)
+                material.append(p2piece)
 
         # Update bitboards
         # Set indices
@@ -471,23 +482,27 @@ class Board():
         p1move = 1 >> p1index
         p2move = 1 >> p2index
         
+        white_bitboard = bitboard.Bitboard(0, self.board_width, self.board_height)
+        black_bitboard = bitboard.Bitboard(0, self.board_width, self.board_height)
         if p1piece.side == "w":
-            self.white_bitboard.update((p1move ^ self.white_bitboard.value) & p2move)
-            self.black_bitboard.value = (self.black_bitboard.value ^ self.white_bitboard.value) ^ self.black_bitboard.value
+            white_bitboard.value = (p1move ^ self.white_bitboard.value) | p2move
+            black_bitboard.value = (self.black_bitboard.value ^ white_bitboard.value) ^ self.white_bitboard.value
         else:
-            self.black_bitboard.update((p1move ^ self.black_bitboard.value) & p2move)
-            self.white_bitboard.value = (self.black_bitboard.value ^ self.white_bitboard.value) ^ self.white_bitboard.value
-            
+            black_bitboard.value = (p1move ^ self.black_bitboard.value) | p2move
+            white_bitboard.value = (black_bitboard.value ^ self.white_bitboard.value) ^ self.black_bitboard.value
+        
+        piece_bitboards = copy.deepcopy(self.piece_bitboards)
         # Update piece bitboards
         bothmoves = p1move & p2move
-        bitboard.Bitboard(bothmoves, 8, 8).display_bitboard()
         if p1piece.id != 6:
-            self.piece_bitboards[p1piece.id] ^= bothmoves
+            piece_bitboards[p1piece.id].value = self.piece_bitboards[p1piece.id].value ^ bothmoves
         if p2piece.id != 6:
-            self.piece_bitboards[p2piece.id] ^= p2move
+            piece_bitboards[p2piece.id].value = self.piece_bitboards[p2piece.id].value ^ p2move
 
         # Move piece on list
-        self.board[p2[0]][p2[1]] = self.board[p1[0]][p1[1]]
+        board[p2[0]][p2[1]] = board[p1[0]][p1[1]]
         import pieces
-        self.board[p1[0]][p1[1]] = pieces.EmptyPiece(self)
+        board[p1[0]][p1[1]] = pieces.EmptyPiece(self)
+        
+        return board, material, white_bitboard, black_bitboard, piece_bitboards
     
