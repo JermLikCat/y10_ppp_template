@@ -2,6 +2,7 @@ import bitboard
 import magicnums
 import ctypes
 import lookuptables
+import gmp
 
 # NOTE:
 # TOP-LEFT is INDEX 0, GOING FROM LEFT TO RIGHT IN A BITBOARD
@@ -104,6 +105,12 @@ class Board():
             else:
                 print("Illegal move!")
                 
+    # MOVE GENERATION
+    
+    def return_legal_moves(self, side: str) -> list:
+        pass
+    
+    
     
     
     # SETUP
@@ -120,7 +127,7 @@ class Board():
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
-            [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
+            [pieces.Rook(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.King(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.Rook(self, "w")]
         ]
         
         # Length: Y, Width: X
@@ -351,8 +358,13 @@ class Board():
                 print("Illegal because of check!")
                 return False
         
+        # Check if piece is within possible moves
         result = True if ((1 << final_bit_shift) & possible_moves.value) else False
-        result = True if ((1 << final_bit_shift) & self.castleboard.value) else False
+        
+        # If not check if it is a castle
+        if result == False:
+            result = True if ((1 << final_bit_shift) & self.castleboard.value) else False
+        
         return result
     
     def check_check(self, piece, position: tuple[int, int], index = None, white_bitboard = None, black_bitboard = None, piece_bitboards = None) -> bool:
@@ -438,11 +450,11 @@ class Board():
             
             # Account for en passant
             # We dont need to check for y boundaries as it never is a problem in en passant
-            if position[1] - 1 >= 0 and position[1] - 1 <= self.board_width:
+            if position[1] - 1 >= 0 and position[1] - 1 < self.board_width:
                 if self.board[position[0]][position[1] - 1] in self.en_passantable:
                     possible_moves.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] - 1) + 1))
                     self.en_passantboard.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] - 1) + 1))
-            if position[1] + 1 >= 0 and position[1] + 1 <= self.board_width:
+            if position[1] + 1 >= 0 and position[1] + 1 < self.board_width:
                 if self.board[position[0]][position[1] + 1] in self.en_passantable:
                     possible_moves.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] + 1) + 1))
                     self.en_passantboard.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] + 1) + 1))
@@ -523,21 +535,21 @@ class Board():
             index = (position[0] * self.board_width + position[1])
         possible_moves = bitboard.Bitboard(lookuptables.kingTable[index], self.board_width, self.board_height)
         
-        # TODO: Account for castling
+        # Account for castling
+        # Only make it a viable option if the piece is moved
         if not piece.has_moved:
-            if not self.board[position[0]][0].has_moved:
-                value = (1 >> (64 - (position[0] * self.board_width + 1)))
+            if not self.board[position[0]][0].has_moved and self.board[position[0]][0].id == self.ROOK_ID and self.board[position[0]][0].side == piece.side:
+                value = (1 << (64 - (position[0] * self.board_width + 1)))
                 possible_moves.value |= value
                 self.castleboard.value |= value
-            if not self.board[position[0]][self.board_width - 1].has_moved:
-                value = (1 >> (64 - (position[0] * self.board_width + (self.board_width - 1) + 1)))
+            if not self.board[position[0]][self.board_width - 1].has_moved and self.board[position[0]][self.board_width - 1].id == self.ROOK_ID and self.board[position[0]][self.board_width - 1].side == piece.side:
+                value = (1 << (64 - (position[0] * self.board_width + (self.board_width - 1) + 1)))
                 possible_moves.value |= value
                 self.castleboard.value |= value
         
         return possible_moves
         
-    def generate_pseudolegal_moves(self):
-        pass
+    
     
     def move(self, p1: tuple[int, int], p2: tuple[int, int], change_board = False):
         """Returns new board with move completed, along with material, and new bitboards."""
@@ -603,11 +615,14 @@ class Board():
                     # Double push
                     if abs(p1[0] - p2[0]) == 2:
                         self.en_passantable.append(p1piece)
-                p1piece.has_moved == True
+                p1piece.has_moved = True
+                print(p1piece)
         else:
             if change_board:
                 material, white_bitboard, black_bitboard, piece_bitboards = self.castle(p1, p2)
-        
+                p1piece.has_moved = True
+                print(p1piece)
+                self.castleboard.value = 0
         return material, white_bitboard, black_bitboard, piece_bitboards
 
     def remove_piece(self, position):
