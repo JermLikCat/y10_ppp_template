@@ -4,7 +4,7 @@ import bitboard
 class Piece():
     def __init__(self, board: board.Board, side: str, id: int):
         """Default initialization for a new piece. IDs: Pawn: 0, Bishop: 1, Rook: 2, Knight: 3, Queen: 4, King: 5, Empty: 6"""
-        self.side = side # True = White, False = Black
+        self.side = side # "w" for white, "b" for black
         self.directions = []
         self.board = board
         # Type of piece, accessible by other functions
