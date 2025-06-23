@@ -9,6 +9,7 @@ class Piece():
         self.board = board
         # Type of piece, accessible by other functions
         self.id = id
+        self.has_moved = False
 
     def encode_move(self, move: str) -> int:
         """Encodes move into an integer from algebraic notation. In the form of: piece_type - rank (as required) - location_y - location_x"""
