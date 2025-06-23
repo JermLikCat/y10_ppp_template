@@ -81,16 +81,29 @@ class Board():
             print("  0 1 2 3 4 5 6 7")
             p1 = input()
             p2 = input()
-            print(self.king_positions)
             if self.check_move_legal((int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1]))):
+                p1 = (int(p1[0]), int(p1[1]))
+                p2 = (int(p2[0]), int(p2[1]))
+
+                # If en passant then take piece
+                en_passant = (1 << (64 - ((p2[0]) * self.board_width + p2[1] + 1))) & self.en_passantboard.value
+                if en_passant:
+                    # If moving to right
+                    if p2[1] > p1[1]:
+                        self.remove_piece((p1[0], p1[1] + 1))
+                    elif p2[1] < p1[1]:
+                        self.remove_piece((p1[0], p1[1] - 1))
                 # Clear en passant list
                 self.en_passantboard.value = 0
                 self.en_passantable = []
+                
+                # move piece
                 material, self.white_bitboard, self.black_bitboard, self.piece_bitboards = self.move((int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), True)
-                if (1 << (64 - (p2[0] * self.board_width + p2[1] + 1))) & self.en_passantboard.value:
-                    self.
+                
+                
             else:
                 print("Illegal move!")
+                
     
     
     # SETUP
@@ -324,11 +337,6 @@ class Board():
         else:
             possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
         
-        if piece.id != 6:
-            print(piece.id)
-            print("Possible:")
-            print(self.en_passantable)
-            possible_moves.display_bitboard()
         # Account for checks - this only checks for pseudo-legal moves
         # We do this by seeing if the king is in check after testing out the move
         material, white_bitboard, black_bitboard, piece_bitboards = self.move(p1, p2, False)
@@ -361,8 +369,7 @@ class Board():
         # Don't need queen attacks as we can check if queen is in either rook or bishop attacks
         PAWN_ATTACKERS = self.get_possible_pawn_moves(piece, self.PAWN_ID, position, index).value & piece_bitboards[self.PAWN_ID].value
         KNIGHT_ATTACKERS = self.get_possible_knight_moves(piece, self.KNIGHT_ID, position, index).value & piece_bitboards[self.KNIGHT_ID].value
-        self.get_possible_sliding_moves(piece, self.BISHOP_ID, position, index, white_bitboard, black_bitboard).display_bitboard()
-        print(position)
+
         if piece.side == "w":
             if ((ROOK_ATTACKERS & black_bitboard.value) | (BISHOP_ATTACKERS & black_bitboard.value) | (PAWN_ATTACKERS & black_bitboard.value) | (KNIGHT_ATTACKERS & black_bitboard.value)):
                 return True
@@ -426,14 +433,16 @@ class Board():
             # Add mask to possible moves
             possible_moves.value |= (mask & black_bitboard.value)
             
-            """# Account for en passant
+            # Account for en passant
             # We dont need to check for y boundaries as it never is a problem in en passant
             if position[1] - 1 >= 0 and position[1] - 1 <= self.board_width:
                 if self.board[position[0]][position[1] - 1] in self.en_passantable:
                     possible_moves.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] - 1) + 1))
+                    self.en_passantboard.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] - 1) + 1))
             if position[1] + 1 >= 0 and position[1] + 1 <= self.board_width:
                 if self.board[position[0]][position[1] + 1] in self.en_passantable:
-                    possible_moves.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] + 1) + 1))"""
+                    possible_moves.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] + 1) + 1))
+                    self.en_passantboard.value |= 1 << (64 - (((position[0] - 1) * self.board_width + position[1] + 1) + 1))
         else:
             possible_moves.value >>= self.board_width
             
@@ -451,16 +460,16 @@ class Board():
             # Add mask to possible moves
             possible_moves.value |= (mask & white_bitboard.value)
             
-        # Account for en passant
-        # We dont need to check for y boundaries as it never is a problem in en passant
-        if position[1] - 1 >= 0 and position[1] - 1 < self.board_width:
-            if self.board[position[0]][position[1] - 1] in self.en_passantable:
-                possible_moves.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] - 1) + 1))
-                self.en_passantboard |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] - 1) + 1))
-        if position[1] + 1 >= 0 and position[1] + 1 < self.board_width:
-            if self.board[position[0]][position[1] + 1] in self.en_passantable:
-                possible_moves.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] + 1) + 1))
-                self.en_passantboard |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] + 1) + 1))
+            # Account for en passant
+            # We dont need to check for y boundaries as it never is a problem in en passant
+            if position[1] - 1 >= 0 and position[1] - 1 < self.board_width:
+                if self.board[position[0]][position[1] - 1] in self.en_passantable:
+                    possible_moves.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] - 1) + 1))
+                    self.en_passantboard.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] - 1) + 1))
+            if position[1] + 1 >= 0 and position[1] + 1 < self.board_width:
+                if self.board[position[0]][position[1] + 1] in self.en_passantable:
+                    possible_moves.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] + 1) + 1))
+                    self.en_passantboard.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] + 1) + 1))
         
         return possible_moves
     
@@ -510,6 +519,8 @@ class Board():
         if index == None:
             index = (position[0] * self.board_width + position[1])
         possible_moves = bitboard.Bitboard(lookuptables.kingTable[index], self.board_width, self.board_height)
+        
+        # TODO: Account for castling
         
         return possible_moves
         
@@ -585,15 +596,23 @@ class Board():
         pos_bb = 1 << (64 - (position[0] * self.board_width + position[1] + 1))
         
         if self.board[position[0]][position[1]].side == "w":
-            self.white_bitboard ^= pos_bb
+            self.white_bitboard.value ^= pos_bb
             self.bmaterial.append(self.board[position[0]][position[1]])
         else:
-            self.black_bitboard ^= pos_bb
+            self.black_bitboard.value ^= pos_bb
             self.wmaterial.append(self.board[position[0]][position[1]])
         
         if self.board[position[0]][position[1]].id != 6:
-            self.piece_bitboards[self.board[position[0]][position[1]].id] ^= pos_bb
+            self.piece_bitboards[self.board[position[0]][position[1]].id].value ^= pos_bb
         
         import pieces
         self.board[position[0]][position[1]] = pieces.EmptyPiece(self)
-        
+    
+    def castle(self, king_position: tuple[int, int], rook_position: tuple[int, int], castle_type: bool):
+        """Castle type: True = long, False = short"""
+        if castle_type == True:
+            self.move(king_position, (king_position[0], king_position[1] - 2), True)
+            self.move(rook_position, (rook_position[0], rook_position[1] + 3), True)
+        else:
+            self.move(king_position, (king_position[0], king_position[1] + 2), True)
+            self.move(rook_position, (rook_position[0], rook_position[1] - 2), True)
