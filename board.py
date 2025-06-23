@@ -2,8 +2,7 @@ import bitboard
 import magicnums
 import ctypes
 import lookuptables
-import gmp
-
+import copy
 # NOTE:
 # TOP-LEFT is INDEX 0, GOING FROM LEFT TO RIGHT IN A BITBOARD
 # << MOVES TOWARDS THE LEFT
@@ -65,7 +64,10 @@ class Board():
         }
         icons = ['p', 'b', 'r', 'n', 'q', 'k', '.']
         bicons = ['P', 'B', 'R', 'N', 'Q', 'K', '.']
+        currentside = "w"
         while True:
+            print(f"It's {currentside}'s turn!")
+            print(f"Current evaluation: {self.evaluate("w")}")
             y = 0
             x = 0
             for row in self.board:
@@ -82,36 +84,138 @@ class Board():
             print("  0 1 2 3 4 5 6 7")
             p1 = input()
             p2 = input()
-            if self.check_move_legal((int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1]))):
-                p1 = (int(p1[0]), int(p1[1]))
-                p2 = (int(p2[0]), int(p2[1]))
+            p1 = (int(p1[0]), int(p1[1]))
+            p2 = (int(p2[0]), int(p2[1]))
 
-                # If en passant then take piece
-                en_passant = (1 << (64 - ((p2[0]) * self.board_width + p2[1] + 1))) & self.en_passantboard.value
-                if en_passant:
-                    # If moving to right
-                    if p2[1] > p1[1]:
-                        self.remove_piece((p1[0], p1[1] + 1))
-                    elif p2[1] < p1[1]:
-                        self.remove_piece((p1[0], p1[1] - 1))
-                # Clear en passant list
-                self.en_passantboard.value = 0
-                self.en_passantable = []
+            moves = self.return_legal_moves(currentside)
+            if len(moves) == 0:
+                if currentside == "w":
+                    if self.check_check(self.board[self.king_positions[0][0]][self.king_positions[0][1]], self.king_positions[0]):
+                        print("Checkmate! Black wins")
+                    else:
+                        print("Stalemate")
+                elif currentside == "b":
+                    if self.check_check(self.board[self.king_positions[1][0]][self.king_positions[1][1]], self.king_positions[1]):
+                        print("Checkmate! White wins")
+                    else:
+                        print("Stalemate")
+                break
+                    
+            
+            if (p1, p2) in moves:
                 
                 # move piece
                 material, self.white_bitboard, self.black_bitboard, self.piece_bitboards = self.move((int(p1[0]), int(p1[1])), (int(p2[0]), int(p2[1])), True)
-                
-                
+                # Clear en passant list
+                self.en_passantboard.value = 0
+                self.en_passantable = []
+                if currentside == "b":
+                    currentside = "w"
+                else:
+                    currentside = "b"
             else:
                 print("Illegal move!")
+                
                 
     # MOVE GENERATION
     
     def return_legal_moves(self, side: str) -> list:
-        pass
+        """Returns all legal moves in a list, in the form of a tuple (a, b)"""
+        
+        legal_moves = []
+        
+        # Loop through board
+        for y, row in enumerate(self.board):
+            for x, piece in enumerate(row):
+                if piece.side == side:
+                    position = (y, x)
+                    index = position[0] * self.board_width + position[1]
+                    
+                    if piece.id in [self.BISHOP_ID, self.ROOK_ID, self.QUEEN_ID]:
+                        possible_moves = self.get_possible_sliding_moves(piece, piece.id, position, index)
+                    elif piece.id in [self.PAWN_ID]:
+                        possible_moves = self.get_possible_pawn_moves(piece, piece.id, position, index)
+                    elif piece.id in [self.KNIGHT_ID]:
+                        possible_moves = self.get_possible_knight_moves(piece, piece.id, position, index)
+                    elif piece.id in [self.KING_ID]:
+                        pass # We will check for possible king moves later
+                    else:
+                        continue
+                    
+                    # Remove own piece from possible moves
+                    if side == "w":
+                        possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
+                    else:
+                        possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
+                    
+                    if piece.id in [self.KING_ID]:
+                        possible_moves = self.get_possible_king_moves(piece, piece.id, position, index)
+                    
+                    from gmpy2 import bit_scan1
+                    while bit_scan1(possible_moves.value) != None:
+                        newpos_bit = bit_scan1(possible_moves.value)
+                        newpos_bit_adjusted = self.board_area - (newpos_bit + 1)
+                        y_pos = newpos_bit_adjusted // self.board_width
+                        newpos = (y_pos, newpos_bit_adjusted - (y_pos * self.board_width))
+                        if self.check_move_legal(position, newpos):
+                            legal_moves.append((position, newpos))
+                        possible_moves.value ^= 1 << newpos_bit
+
+        return legal_moves
+    
+    # CHESS AI
     
     
     
+    def evaluate(self, side_to_move = "w") -> float:
+        mg = [0, 0]
+        eg = [0, 0]
+        game_phase = 0
+        
+        WHITE = 0
+        BLACK = 1
+        
+        
+        for y, row in enumerate(self.board):
+            for x, piece in enumerate(row):
+                if piece.id != 6:
+                    if piece.side == "w":
+                        mg[WHITE] += lookuptables.WHITE_MG_TABLE[piece.id][y][x]
+                        eg[WHITE] += lookuptables.WHITE_EG_TABLE[piece.id][y][x]
+                    elif piece.side == "b":
+                        mg[BLACK] += lookuptables.BLACK_MG_TABLE[piece.id][y][x]
+                        eg[BLACK] += lookuptables.BLACK_EG_TABLE[piece.id][y][x]
+                    game_phase += lookuptables.GAMEPHASE_INC[piece.id]
+        
+        side_to_move = WHITE if side_to_move == "w" else BLACK
+        mg_score = mg[side_to_move] - mg[abs(side_to_move - 1)]
+        eg_score = eg[side_to_move] - eg[abs(side_to_move - 1)]
+        
+        mg_phase = game_phase
+        if (mg_phase > 24):
+            mg_phase = 24
+            
+        eg_phase = 24 - mg_phase
+        return (mg_score * mg_phase + eg_score * eg_phase) / 24
+    
+    def perft_test(self, depth, side = "b"):
+        if side == "b":
+            side = "w"
+        else:
+            side = "b"
+        moves = self.return_legal_moves(side)
+        length = len(moves)
+        nodes = 0
+        if depth == 0:
+            return 1
+        for i in range(length):
+            self.move(moves[i][0], moves[i][1])
+            nodes += self.perft_test(depth - 1, side)
+            self.move(moves[i][1], moves[i][0])
+        return nodes
+
+    def copy_bitboard(self, bb: bitboard.Bitboard):
+        return bitboard.Bitboard(bb.value, self.board_width, self.board_height)
     
     # SETUP
     
@@ -127,7 +231,7 @@ class Board():
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self)],
             [pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w"), pieces.Pawn(self, "w")],
-            [pieces.Rook(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.King(self, "w"), pieces.EmptyPiece(self), pieces.EmptyPiece(self), pieces.Rook(self, "w")]
+            [pieces.Rook(self, "w"), pieces.Knight(self, "w"), pieces.Bishop(self, "w"), pieces.Queen(self, "w"), pieces.King(self, "w"), pieces.Bishop(self, "w"), pieces.Knight(self, "w"), pieces.Rook(self, "w")]
         ]
         
         # Length: Y, Width: X
@@ -316,9 +420,7 @@ class Board():
         return (ctypes.c_uint64((blockers.value * magic_number)).value >> (index_number)) + offset
     
     def check_move_legal(self, p1: tuple[int, int], p2: tuple[int, int]):
-        index = (p1[0] * self.board_width + p1[1])
-        finalindex = (p2[0] * self.board_width + p2[1])
-        final_bit_shift = (64 - (finalindex + 1))
+        """Make sure move is legal - that is, make sure it accounts for checks"""
         
         # Boundary checks - cant be negative or over the width/height of the board
         if p1[0] >= self.board_height or p1[0] < 0 or p2[0] >= self.board_height or p2[0] < 0:
@@ -327,23 +429,6 @@ class Board():
             return False
         
         piece = self.board[p1[0]][p1[1]]
-        
-        # If piece is sliding
-        if piece.id in [self.BISHOP_ID, self.ROOK_ID, self.QUEEN_ID]:
-            possible_moves = self.get_possible_sliding_moves(piece, piece.id, p1, index)
-        elif piece.id in [self.PAWN_ID]:
-            possible_moves = self.get_possible_pawn_moves(piece, piece.id, p1, index)
-        elif piece.id in [self.KNIGHT_ID]:
-            possible_moves = self.get_possible_knight_moves(piece, piece.id, p1, index)
-        elif piece.id in [self.KING_ID]:
-            possible_moves = self.get_possible_king_moves(piece, piece.id, p1, index)
-        # Remove own piece from possible moves
-        possible_moves.display_bitboard()
-        
-        if piece.side == "w":
-            possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
-        else:
-            possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
         
         # Account for checks - this only checks for pseudo-legal moves
         # We do this by seeing if the king is in check after testing out the move
@@ -358,14 +443,7 @@ class Board():
                 print("Illegal because of check!")
                 return False
         
-        # Check if piece is within possible moves
-        result = True if ((1 << final_bit_shift) & possible_moves.value) else False
-        
-        # If not check if it is a castle
-        if result == False:
-            result = True if ((1 << final_bit_shift) & self.castleboard.value) else False
-        
-        return result
+        return True
     
     def check_check(self, piece, position: tuple[int, int], index = None, white_bitboard = None, black_bitboard = None, piece_bitboards = None) -> bool:
         """Check for if a king is in check. Take in the King piece and position as parameters. If in check return True. Otherwise, return False."""
@@ -485,7 +563,6 @@ class Board():
                 if self.board[position[0]][position[1] + 1] in self.en_passantable:
                     possible_moves.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] + 1) + 1))
                     self.en_passantboard.value |= 1 << (64 - (((position[0] + 1) * self.board_width + position[1] + 1) + 1))
-        
         return possible_moves
     
     def get_possible_sliding_moves(self, piece, piece_id, position: tuple[int, int], index = None, white_bitboard = None, black_bitboard = None):
@@ -518,26 +595,29 @@ class Board():
             
         elif piece_id == self.QUEEN_ID:
             # Queen travels in direction of both rook and bishop
-            return bitboard.Bitboard(self.get_possible_sliding_moves(piece, self.ROOK_ID, position, index, white_bitboard, black_bitboard).value | self.get_possible_sliding_moves(piece, self.BISHOP_ID, position, index, white_bitboard, black_bitboard).value, self.board_width, self.board_height)
+            possible_moves = bitboard.Bitboard(self.get_possible_sliding_moves(piece, self.ROOK_ID, position, index, white_bitboard, black_bitboard).value | self.get_possible_sliding_moves(piece, self.BISHOP_ID, position, index, white_bitboard, black_bitboard).value, self.board_width, self.board_height)
 
-
+        possible_moves = self.copy_bitboard(possible_moves)
         return possible_moves
         
     def get_possible_knight_moves(self, piece, piece_id, position: tuple[int, int], index = None):
         if index == None:
             index = (position[0] * self.board_width + position[1])
         possible_moves = bitboard.Bitboard(lookuptables.knightTable[index], self.board_width, self.board_height)
-        
         return possible_moves
 
     def get_possible_king_moves(self, piece, piece_id, position: tuple[int, int], index = None):
         if index == None:
             index = (position[0] * self.board_width + position[1])
         possible_moves = bitboard.Bitboard(lookuptables.kingTable[index], self.board_width, self.board_height)
+        if piece.side == "w":
+            possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
+        else:
+            possible_moves.value = (possible_moves.value & self.black_bitboard.value) ^ possible_moves.value
         
         # Account for castling
-        # Only make it a viable option if the piece is moved
-        if not piece.has_moved:
+        # Only make it a viable option if the piece is not moved
+        if not piece.has_moved and not self.check_check(piece, position, index):
             if not self.board[position[0]][0].has_moved and self.board[position[0]][0].id == self.ROOK_ID and self.board[position[0]][0].side == piece.side:
                 value = (1 << (64 - (position[0] * self.board_width + 1)))
                 possible_moves.value |= value
@@ -553,6 +633,20 @@ class Board():
     
     def move(self, p1: tuple[int, int], p2: tuple[int, int], change_board = False):
         """Returns new board with move completed, along with material, and new bitboards."""
+        
+        # En passant
+        # TODO: move en passant logic to move()
+        # If en passant then take piece
+        en_passant = (1 << (64 - ((p2[0]) * self.board_width + p2[1] + 1))) & self.en_passantboard.value
+        if en_passant:
+            # If moving to right
+            if p2[1] > p1[1]:
+                self.remove_piece((p1[0], p1[1] + 1))
+            elif p2[1] < p1[1]:
+                self.remove_piece((p1[0], p1[1] - 1))
+        # Clear en passant list
+        self.en_passantboard.value = 0
+        self.en_passantable = []
         
         material = []
        
@@ -581,7 +675,7 @@ class Board():
         
         import copy
         piece_bitboards = copy.deepcopy(self.piece_bitboards)
-        if not p2move & self.castleboard.value:
+        if not (p2move & self.castleboard.value and p2piece.id == self.ROOK_ID and p2piece.side == p1piece.side):
             if p1piece.side == "w":
                 white_bitboard.value = (p1move ^ self.white_bitboard.value) | p2move
                 black_bitboard.value = (self.black_bitboard.value | white_bitboard.value) ^ white_bitboard.value
@@ -616,15 +710,47 @@ class Board():
                     if abs(p1[0] - p2[0]) == 2:
                         self.en_passantable.append(p1piece)
                 p1piece.has_moved = True
-                print(p1piece)
+                
+                # Update promotions
+                if p1piece.id == self.PAWN_ID:
+                    BACK_RANK = 0xff00000000000000
+                    FRONT_RANK = 0xff
+                    if p1piece.side == "w":
+                        if p2move & BACK_RANK:
+                            self.promote(p2, "w", True)
+                    elif p1piece.side == "b":
+                        if p2move & FRONT_RANK:
+                            self.promote(p2, "b", True)
         else:
             if change_board:
                 material, white_bitboard, black_bitboard, piece_bitboards = self.castle(p1, p2)
                 p1piece.has_moved = True
-                print(p1piece)
                 self.castleboard.value = 0
         return material, white_bitboard, black_bitboard, piece_bitboards
 
+    def promote(self, position, side, prompt = True):
+        new_piece = "q"
+        if prompt:
+            new_piece = input("What piece would you like to promote to? ('q', 'r', 'b', 'n')")
+            
+        index = 1 << 63 - (position[0] * self.board_width + position[1])
+        self.piece_bitboards[self.PAWN_ID].value ^= index
+        import pieces
+        match new_piece:
+            case 'q':
+                self.board[position[0]][position[1]] = pieces.Queen(self, side)
+                self.piece_bitboards[self.QUEEN_ID].value |= index
+            case 'r':
+                self.board[position[0]][position[1]] = pieces.Rook(self, side)
+                self.piece_bitboards[self.ROOK_ID].value |= index
+            case 'b':
+                self.board[position[0]][position[1]] = pieces.Bishop(self, side)
+                self.piece_bitboards[self.BISHOP_ID].value |= index
+            case 'n':
+                self.board[position[0]][position[1]] = pieces.Knight(self, side)
+                self.piece_bitboards[self.KNIGHT_ID].value |= index
+                
+    
     def remove_piece(self, position):
         pos_bb = 1 << (64 - (position[0] * self.board_width + position[1] + 1))
         
@@ -650,3 +776,4 @@ class Board():
             material, self.white_bitboard, self.black_bitboard, self.piece_bitboards = self.move(king_position, (king_position[0], king_position[1] + 2), True)
             material, self.white_bitboard, self.black_bitboard, self.piece_bitboards = self.move(rook_position, (rook_position[0], rook_position[1] - 2), True)
         return material, self.white_bitboard, self.black_bitboard, self.piece_bitboards
+    
