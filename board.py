@@ -165,9 +165,7 @@ class Board():
                         possible_moves.value ^= 1 << newpos_bit
 
         return legal_moves
-    
-    # CHESS AI
-    
+
     
     
     def evaluate(self, side_to_move = "w") -> float:
