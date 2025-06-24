@@ -82,8 +82,22 @@ class Board():
                 print()
                 
             print("  0 1 2 3 4 5 6 7")
-            p1 = input()
+            
+            print("Enter the positions in the form of yx.")
+            
+            print("> ", end = "")
+            
+            print("Position 1:")
+            p1 = input().strip()
+            while not p1.isnumeric() or len(p1) != 2:
+                print("Invalid input!")
+                p1 = input()
+            print("> ", end = "")
+            print("Position 2:")
             p2 = input()
+            while not p2.isnumeric() or len(p2) != 2:
+                print("Invalid input!")
+                p2 = input()
             p1 = (int(p1[0]), int(p1[1]))
             p2 = (int(p2[0]), int(p2[1]))
 
