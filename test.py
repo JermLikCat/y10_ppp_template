@@ -1,7 +1,3 @@
 import numpy as np
 
-a = [
-    [1, 2, 3],
-    [1, 2]
-]
-print(np.array(a))
+print(bin(np.uint16(0b1111111100000000) << 7 >> 3))

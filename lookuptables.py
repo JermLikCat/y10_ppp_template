@@ -38,6 +38,10 @@ kingTable = [
 0x2838000000000000, 0x5070000000000000, 0xa0e0000000000000, 0x40c0000000000000
 ]
 
+for i in kingTable:
+    import bitboard
+    bitboard.Bitboard(i, 8, 8).display_bitboard()
+
 kingTable.reverse()
 
 # Evaluation lookup tables

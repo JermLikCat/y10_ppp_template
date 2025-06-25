@@ -1,17 +1,19 @@
 import bitboard
 import magicnums
-import ctypes
 import lookuptables
 import numpy as np
 import numpy.typing as npt
+from gmpy2 import bit_scan1
 
 # NOTE:
 # LEAST SIGNIFICANT BIT IS BOTTOM RIGHT, MOST SIGNIFICANT ON TOP LEFT.
 # BITBOARD IS INDEXED ASCENDINGLY FROM RIGHT TO LEFT, BOTTOM TO TOP
+# POSITION IN THE FORM OF (x, y)
 # << MOVES TOWARDS THE LEFT
 # >> MOVES TOWARDS THE RIGHT
 # << self.board_width MOVES ONE ROW UP
 # >> self.board_width MOVES ONE ROW DOWN
+# MOVE ENCODING - FLAG, FIRST POSITION, SECOND POSITION
 
 class Board:
     PAWN_ID = 0
@@ -33,18 +35,51 @@ class Board:
     BOARD_WIDTH = 8
     BOARD_HEIGHT = 8
     
+    FIRST_RANK = 0x00000000000000FF
+    SECOND_RANK = 0x000000000000FF00
+    THIRD_RANK = 0x0000000000FF0000
+    FOURTH_RANK = 0x00000000FF000000
+    FIFTH_RANK = 0x000000FF00000000
+    SIXTH_RANK = 0x0000FF0000000000
+    SEVENTH_RANK = 0x00FF000000000000
+    EIGTH_RANK = 0xFF00000000000000
+    
+    LEFT_BORDER = 0x8080808080808080
+    RIGHT_BORDER = 0x101010101010101
+    
+    # Move encoding ids
+    QUIET_MOVE = 0
+    DOUBLE_PAWN_PUSH = 1
+    KING_CASTLE = 2
+    QUEEN_CASTLE = 3
+    CAPTURE = 4
+    EP_CAPTURE = 5
+    KNIGHT_PROMOTION = 8
+    BISHOP_PROMOTION = 9
+    ROOK_PROMOTION = 10
+    QUEEN_PROMOTION = 11
+    KNIGHT_PROMOTION_CAPTURE = 12
+    BISHOP_PROMOTION_CAPTURE = 13
+    ROOK_PROMOTION_CAPTURE = 14
+    QUEEN_PROMOTION_CAPTURE = 15
+    
+    NULL_POSITION = 65
+    
     def __init__(self, game, side):
         self.game = game
         self.side = side
         
         self.ROOK_TABLE: npt.NDArray
         self.BISHOP_TABLE: npt.NDArray
-        self.setup_magic_tables()
+        self.ROOK_TABLE, self.BISHOP_TABLE = self.setup_magic_tables()
         
         self.side_bitboards: npt.NDArray
         self.piece_bitboards: npt.NDArray
         
         self.side_bitboards, self.piece_bitboards = self.setup_bitboards()
+        
+        self.move_history = []
+    
     
     # SETUP
     
@@ -54,23 +89,115 @@ class Board:
         return rook_table, bishop_table
     
     def setup_bitboards(self):
-        side_bitboards = np.array([bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT), 
-                                        bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT)])
-        piece_bitboards = np.array([bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT),
-                                        bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT),
-                                        bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT),
-                                        bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT),
-                                        bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT),
-                                        bitboard.Bitboard(np.uint64(0), self.BOARD_WIDTH, self.BOARD_HEIGHT)])
+        side_bitboards = np.array([np.uint64(0)] * 2)
+        piece_bitboards = np.array([np.uint64(0)] * 6)
         return side_bitboards, piece_bitboards
     
+    
     # MOVE GENERATION
+    
     def generate_legal_moves(self):
-        pass
+        # Make a bitboard of the current board to loop through
+        current_board = self.side_bitboards[self.WHITE_SIDE] | self.side_bitboards[self.BLACK_SIDE]
+        while current_board != 0:
+            current_position = 1 << self.return_lsb_position(current_board)
+            if (self.piece_bitboards[self.ROOK_ID] & (current_position)):
+                pass
+            elif (self.piece_bitboards[self.BISHOP_ID] & (current_position)):
+                pass
+            elif (self.piece_bitboards[self.QUEEN_ID] & (current_position)):
+                pass
+            elif (self.piece_bitboards[self.PAWN_ID] & (current_position)):
+                pass
+            elif (self.piece_bitboards[self.KNIGHT_ID] & (current_position)):
+                pass
+            elif (self.piece_bitboards[self.KING_ID] & (current_position)):
+                pass
+            
+            current_board ^= current_position
     
-    def generate_pawn_moves(self):
-        pass
-    
+    def generate_pawn_moves(self, current_position: np.uint64, white_bitboard: np.uint64, black_bitboard: np.uint64, move_history: npt.NDArray):
+        moves = []
+        if (current_position & white_bitboard):
+            # Normal pushes
+            pushed = ((current_position << self.BOARD_WIDTH) | self.FIRST_RANK) ^ self.FIRST_RANK
+            if not (pushed & white_bitboard) and not (pushed & black_bitboard):
+                moves.append(self.encode_move(current_position, pushed, self.QUIET_MOVE))
+                
+            # Double pushes
+            if current_position & self.SECOND_RANK:
+                pushed = current_position << (self.BOARD_WIDTH * 2)
+                moves.append(self.encode_move(current_position, pushed, self.DOUBLE_PAWN_PUSH))
+            
+            # Make a mask for takes
+            
+            mask = ((current_position << self.BOARD_WIDTH) | self.FIRST_RANK) ^ self.FIRST_RANK
+            mask_left = ((mask << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((mask >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            take_mask = mask_left | mask_right
+            
+            takes = take_mask & black_bitboard
+            
+            # Pawn captures
+            while takes != 0:
+                pos = self.return_lsb_position(takes)
+                moves.append(self.encode_move(current_position, (np.uint64(1) << pos)), self.CAPTURE)
+                takes ^= (np.uint64(1) << pos)
+            
+            # En passant
+            mask_left = ((current_position << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((current_position >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            ep_mask = mask_left | mask_right
+            
+            en_passantable = ep_mask & black_bitboard
+            
+            if en_passantable and len(move_history) >= 1:
+                # Find last move
+                flag, _, to_pos = self.decode_move(move_history[-1])
+                if flag == self.DOUBLE_PAWN_PUSH and (1 << to_pos) & en_passantable:
+                    moves.append(self.encode_move(current_position, take_mask & (1 << to_pos + self.BOARD_WIDTH)), self.EP_CAPTURE)
+                
+            
+        elif (current_position & black_bitboard):
+            # Normal pushes
+            pushed = (current_position >> self.BOARD_WIDTH)
+            if not (pushed & white_bitboard) and not (pushed & black_bitboard) and pushed > 0:
+                moves.append(self.encode_move(current_position, pushed, self.QUIET_MOVE))
+                
+            # Double pushes
+            if current_position & self.SEVENTH_RANK:
+                pushed = current_position >> (self.BOARD_WIDTH * 2)
+                moves.append(self.encode_move(current_position, pushed, self.DOUBLE_PAWN_PUSH))
+            
+            # Make a mask for takes
+            
+            mask = (current_position >> self.BOARD_WIDTH)
+            mask_left = ((mask << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((mask >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            take_mask = mask_left | mask_right
+            
+            takes = take_mask & white_bitboard
+            
+            # Pawn captures
+            while takes != 0:
+                pos = self.return_lsb_position(takes)
+                moves.append(self.encode_move(current_position, (np.uint64(1) << pos)), self.CAPTURE)
+                takes ^= (np.uint64(1) << pos)
+            
+            # En passant
+            mask_left = ((current_position << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((current_position >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            ep_mask = mask_left | mask_right
+            
+            en_passantable = ep_mask & white_bitboard
+            
+            if en_passantable and len(move_history) >= 1:
+                # Find last move
+                flag, _, to_pos = self.decode_move(move_history[-1])
+                if flag == self.DOUBLE_PAWN_PUSH and (1 << to_pos) & en_passantable:
+                    moves.append(self.encode_move(current_position, take_mask & (1 << to_pos + self.BOARD_WIDTH)), self.EP_CAPTURE)
+                
+        return np.array(moves)
     def generate_knight_moves(self):
         pass
     
@@ -88,11 +215,102 @@ class Board:
         pass
     
     # HELPER FUNCTIONS
-    def generate_magic_index(self, blockers: bitboard.Bitboard, magic_number: int, index_number: int, offset: int) -> int:
-        return (ctypes.c_uint64((blockers.value * magic_number)).value >> (index_number)) + offset
+    def generate_magic_index(self, blockers: np.uint64, magic_number: np.uint64, index_number: np.uint64, offset: np.uint64) -> np.uint64:
+        return (blockers * magic_number) >> (index_number) + offset
     
-    def generate_magic_table(self, deltas, size, moves):
+    def generate_magic_table(self, deltas, size, data: npt.NDArray):
+        table = np.empty(size)
         
+        for position in range(self.BOARD_AREA):
+            magic_data = data[position]
+            rays = magic_data.mask
+            
+            blockers = np.uint64(0)
+            
+            # Loop through all subsets
+            while True:
+                possible_rays = self.generate_piece_rays(deltas, blockers, position)
+                table[self.generate_magic_index(blockers, magic_data.magic, magic_data.index_number, magic_data.offset)] = possible_rays
+                blockers = (blockers - rays) & rays
+                
+                if blockers == 0:
+                    break
+        
+        return table
+    
+    def 
+    
+    def generate_piece_rays(self, deltas_int: tuple[int, int], blockers: np.uint64, position: int) -> np.uint64:
+        final = np.uint64(0)
+        deltas = (np.uint64(deltas_int[0]), np.uint64(deltas_int[1]))
+        
+        for delta in deltas:
+            ray = np.uint64(1 << position)
+            while not (ray & blockers):
+                if self.is_bit_colliding_with_border(ray, delta):
+                    break
+                    
+                if ray & blockers:
+                    break
+                
+                if delta[0] > 0:
+                    ray <<= delta[0]
+                elif delta[0] < 0:
+                    ray >>= abs(delta[0])
+                
+                if delta[1] > 0:
+                    ray <<= self.BOARD_WIDTH * delta[0]
+                elif delta[1] < 0:
+                    ray >>= abs(self.BOARD_WIDTH * delta[0])
+                
+                final |= ray
+        
+        return final
+
+    def is_bit_colliding_with_border(self, ray, delta):
+        # Check borders
+        if delta[0] < 0:
+            if ray & self.RIGHT_BORDER:
+                return True
+        elif delta[0] > 0:
+            if ray & self.LEFT_BORDER:
+                return True
+            
+        if delta[1] < 0:
+            if ray & self.EIGTH_RANK:
+                return True
+        elif delta[1] > 0:
+            if ray & self.FIRST_RANK:
+                return True
+        
+        return False
+        
+    
+    def encode_move(self, from_pos: int | np.uint64, to_pos: int | np.uint64, flag: int) -> np.uint64:
+        if type(from_pos) == np.uint64:
+            from_pos = self.return_lsb_position(from_pos)
+        if type(to_pos) == np.uint64:
+            to_pos = self.return_lsb_position(to_pos)
+        
+        return np.uint16(str(flag) + str(from_pos) + str(to_pos))
+    
+    def decode_move(self, encoded_move: np.uint16):
+        encoded_move_str = str(encoded_move)
+        from_pos = encoded_move_str[:4]
+        to_pos = encoded_move_str[4:10]
+        flag = encoded_move_str[10:]
+        return flag, from_pos, to_pos
+    
+    def return_lsb_position(self, bitboard):
+        """Return position of least significant bit in a bitboard."""
+        
+        index = bit_scan1(bitboard)
+        
+        if index != None: 
+            return np.uint64(index)
+        else:
+            return np.uint64(self.NULL_POSITION)
+    
     
 class ChessAI:
     def __init__(self, board):
