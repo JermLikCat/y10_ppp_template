@@ -3,6 +3,7 @@ import magicnums
 import lookuptables
 import numpy as np
 import numpy.typing as npt
+import queue
 from gmpy2 import bit_scan1
 
 # NOTE:
@@ -47,6 +48,14 @@ class Board:
     LEFT_BORDER = 0x8080808080808080
     RIGHT_BORDER = 0x101010101010101
     
+    # Kings/Rooks moved detection constants for castling
+    CASTLE_BLACK_SHORT_ROOK = 0
+    CASTLE_BLACK_LONG_ROOK = 1
+    CASTLE_BLACK_KING = 2
+    CASTLE_WHITE_SHORT_ROOK = 3
+    CASTLE_WHITE_LONG_ROOK = 4
+    CASTLE_WHITE_KING = 5
+    
     # Move encoding ids
     QUIET_MOVE = 0
     DOUBLE_PAWN_PUSH = 1
@@ -78,6 +87,9 @@ class Board:
         
         self.side_bitboards, self.piece_bitboards = self.setup_bitboards()
         
+        self.castle_bools_queue = queue.LifoQueue()
+        self.castle_bools_queue.put(np.full(6, True))
+        
         self.move_history = []
     
     
@@ -93,14 +105,13 @@ class Board:
         piece_bitboards = np.array([np.uint64(0)] * 6)
         return side_bitboards, piece_bitboards
     
-    
     # MOVE GENERATION
     
     def generate_legal_moves(self):
         # Make a bitboard of the current board to loop through
         current_board = self.side_bitboards[self.WHITE_SIDE] | self.side_bitboards[self.BLACK_SIDE]
         while current_board != 0:
-            current_position = 1 << self.return_lsb_position(current_board)
+            current_position = np.uint64(1) << self.return_lsb_position(current_board)
             if (self.piece_bitboards[self.ROOK_ID] & (current_position)):
                 pass
             elif (self.piece_bitboards[self.BISHOP_ID] & (current_position)):
@@ -119,34 +130,49 @@ class Board:
     def generate_pawn_moves(self, current_position: np.uint64, white_bitboard: np.uint64, black_bitboard: np.uint64, move_history: npt.NDArray):
         moves = []
         if (current_position & white_bitboard):
-            # Normal pushes
+            # Normal pushes & promotions
             pushed = ((current_position << self.BOARD_WIDTH) | self.FIRST_RANK) ^ self.FIRST_RANK
             if not (pushed & white_bitboard) and not (pushed & black_bitboard):
-                moves.append(self.encode_move(current_position, pushed, self.QUIET_MOVE))
+                if not (pushed & self.EIGTH_RANK):
+                    moves.append(self.encode_move(self.QUIET_MOVE, current_position, pushed))
+                else:
+                    moves.append(self.encode_move(self.ROOK_PROMOTION, current_position, pushed))
+                    moves.append(self.encode_move(self.BISHOP_PROMOTION, current_position, pushed))
+                    moves.append(self.encode_move(self.KNIGHT_PROMOTION, current_position, pushed))
+                    moves.append(self.encode_move(self.QUEEN_PROMOTION, current_position, pushed))
                 
             # Double pushes
             if current_position & self.SECOND_RANK:
                 pushed = current_position << (self.BOARD_WIDTH * 2)
-                moves.append(self.encode_move(current_position, pushed, self.DOUBLE_PAWN_PUSH))
+                moves.append(self.encode_move(self.DOUBLE_PAWN_PUSH, current_position, pushed))
             
             # Make a mask for takes
-            
             mask = ((current_position << self.BOARD_WIDTH) | self.FIRST_RANK) ^ self.FIRST_RANK
-            mask_left = ((mask << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
-            mask_right = ((mask >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            mask_left = ((mask << np.uint64(1)) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((mask >> np.uint64(1)) | self.LEFT_BORDER) ^ self.LEFT_BORDER
             take_mask = mask_left | mask_right
             
             takes = take_mask & black_bitboard
             
-            # Pawn captures
-            while takes != 0:
-                pos = self.return_lsb_position(takes)
-                moves.append(self.encode_move(current_position, (np.uint64(1) << pos)), self.CAPTURE)
-                takes ^= (np.uint64(1) << pos)
+            # Pawn takes & promotion-takes
+            if not (takes & self.EIGTH_RANK):
+                while takes != 0:
+                    pos = self.return_lsb_position(takes)
+                    moves.append(self.encode_move(self.CAPTURE, current_position, (np.uint64(1) << pos)))
+                    takes ^= (np.uint64(1) << pos)
+            else:
+                while takes != 0:
+                    pos = self.return_lsb_position(takes)
+                    posBB = (np.uint64(1) << pos)
+                    moves.append(self.encode_move(self.ROOK_PROMOTION, current_position, posBB))
+                    moves.append(self.encode_move(self.BISHOP_PROMOTION, current_position, posBB))
+                    moves.append(self.encode_move(self.KNIGHT_PROMOTION, current_position, posBB))
+                    moves.append(self.encode_move(self.QUEEN_PROMOTION, current_position, posBB))
+                    takes ^= (np.uint64(1) << pos)
             
             # En passant
-            mask_left = ((current_position << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
-            mask_right = ((current_position >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            mask_left = ((current_position << np.uint64(1)) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((current_position >> np.uint64(1)) | self.LEFT_BORDER) ^ self.LEFT_BORDER
             ep_mask = mask_left | mask_right
             
             en_passantable = ep_mask & black_bitboard
@@ -154,39 +180,55 @@ class Board:
             if en_passantable and len(move_history) >= 1:
                 # Find last move
                 flag, _, to_pos = self.decode_move(move_history[-1])
-                if flag == self.DOUBLE_PAWN_PUSH and (1 << to_pos) & en_passantable:
-                    moves.append(self.encode_move(current_position, take_mask & (1 << to_pos + self.BOARD_WIDTH)), self.EP_CAPTURE)
-                
+                if flag == self.DOUBLE_PAWN_PUSH and (np.uint64(1) << to_pos) & en_passantable:
+                    moves.append(self.encode_move(self.EP_CAPTURE, current_position, take_mask & (np.uint64(1) << to_pos + self.BOARD_WIDTH)))
+            
             
         elif (current_position & black_bitboard):
-            # Normal pushes
+            # Normal pushes and promotions
             pushed = (current_position >> self.BOARD_WIDTH)
             if not (pushed & white_bitboard) and not (pushed & black_bitboard) and pushed > 0:
-                moves.append(self.encode_move(current_position, pushed, self.QUIET_MOVE))
+                if not (pushed & self.FIRST_RANK):
+                    moves.append(self.encode_move(self.QUIET_MOVE, current_position, pushed))
+                else:
+                    moves.append(self.encode_move(self.ROOK_PROMOTION, current_position, pushed))
+                    moves.append(self.encode_move(self.BISHOP_PROMOTION, current_position, pushed))
+                    moves.append(self.encode_move(self.KNIGHT_PROMOTION, current_position, pushed))
+                    moves.append(self.encode_move(self.QUEEN_PROMOTION, current_position, pushed))
                 
             # Double pushes
             if current_position & self.SEVENTH_RANK:
                 pushed = current_position >> (self.BOARD_WIDTH * 2)
-                moves.append(self.encode_move(current_position, pushed, self.DOUBLE_PAWN_PUSH))
+                moves.append(self.encode_move(self.DOUBLE_PAWN_PUSH, current_position, pushed))
             
             # Make a mask for takes
             
             mask = (current_position >> self.BOARD_WIDTH)
-            mask_left = ((mask << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
-            mask_right = ((mask >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            mask_left = ((mask << np.uint64(1)) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((mask >> np.uint64(1)) | self.LEFT_BORDER) ^ self.LEFT_BORDER
             take_mask = mask_left | mask_right
             
             takes = take_mask & white_bitboard
             
-            # Pawn captures
-            while takes != 0:
-                pos = self.return_lsb_position(takes)
-                moves.append(self.encode_move(current_position, (np.uint64(1) << pos)), self.CAPTURE)
-                takes ^= (np.uint64(1) << pos)
+            # Pawn takes and promotion-takes
+            if not (takes & self.FIRST_RANK):
+                while takes != 0:
+                    pos = self.return_lsb_position(takes)
+                    moves.append(self.encode_move(self.CAPTURE, current_position, (np.uint64(1) << pos)))
+                    takes ^= (np.uint64(1) << pos)
+            else:
+                while takes != 0:
+                    pos = self.return_lsb_position(takes)
+                    posBB = (np.uint64(1) << pos)
+                    moves.append(self.encode_move(self.ROOK_PROMOTION, current_position, posBB))
+                    moves.append(self.encode_move(self.BISHOP_PROMOTION, current_position, posBB))
+                    moves.append(self.encode_move(self.KNIGHT_PROMOTION, current_position, posBB))
+                    moves.append(self.encode_move(self.QUEEN_PROMOTION, current_position, posBB))
+                    takes ^= (np.uint64(1) << pos)
             
             # En passant
-            mask_left = ((current_position << 1) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
-            mask_right = ((current_position >> 1) | self.LEFT_BORDER) ^ self.LEFT_BORDER
+            mask_left = ((current_position << np.uint64(1)) | self.RIGHT_BORDER) ^ self.RIGHT_BORDER
+            mask_right = ((current_position >> np.uint64(1)) | self.LEFT_BORDER) ^ self.LEFT_BORDER
             ep_mask = mask_left | mask_right
             
             en_passantable = ep_mask & white_bitboard
@@ -194,25 +236,283 @@ class Board:
             if en_passantable and len(move_history) >= 1:
                 # Find last move
                 flag, _, to_pos = self.decode_move(move_history[-1])
-                if flag == self.DOUBLE_PAWN_PUSH and (1 << to_pos) & en_passantable:
-                    moves.append(self.encode_move(current_position, take_mask & (1 << to_pos + self.BOARD_WIDTH)), self.EP_CAPTURE)
+                if flag == self.DOUBLE_PAWN_PUSH and (np.uint64(1) << to_pos) & en_passantable:
+                    moves.append(self.encode_move(self.EP_CAPTURE, current_position, take_mask & (np.uint64(1) << to_pos + self.BOARD_WIDTH)))
                 
         return np.array(moves)
-    def generate_knight_moves(self):
-        pass
     
-    def generate_king_moves(self):
-        pass
+    def generate_knight_moves(self, current_position: np.uint64, white_bitboard: np.uint64, black_bitboard: np.uint64):
+        moves = []
+        index = self.return_lsb_position(current_position)
+        
+        possible_moves = np.uint64(lookuptables.KNIGHT_TABLE[index])
+        
+        if current_position & white_bitboard:
+            possible_moves = (possible_moves & white_bitboard) ^ white_bitboard
+            while possible_moves != 0:
+                current = self.return_lsb_position(possible_moves)
+                move_flag = self.CAPTURE if (np.uint64(1) << current) & black_bitboard else self.QUIET_MOVE
+                moves.append(self.encode_move(move_flag, index, current))
+                possible_moves ^= (np.uint64(1) << current)
+        elif current_position & black_bitboard:
+            possible_moves = (possible_moves & black_bitboard) ^ black_bitboard
+            while possible_moves != 0:
+                current = self.return_lsb_position(possible_moves)
+                move_flag = self.CAPTURE if (np.uint64(1) << current) & white_bitboard else self.QUIET_MOVE
+                moves.append(self.encode_move(move_flag, index, current))
+                possible_moves ^= (np.uint64(1) << current)
+        
+        return moves
     
-    def generate_sliding_moves(self):
-        pass
+    def generate_king_moves(self, current_position: np.uint64, white_bitboard: np.uint64, black_bitboard: np.uint64, move_history: npt.NDArray):
+        
+        # Standard moves & castling
+        moves = []
+        index = self.return_lsb_position(current_position)
+        
+        possible_moves = np.uint64(lookuptables.KING_TABLE[index])
+        castle_bools = self.castle_bools_queue.get()
+        self.castle_bools_queue.put(castle_bools)
+        
+        if current_position & white_bitboard:
+            # Standard moves
+            possible_moves = (possible_moves & white_bitboard) ^ white_bitboard
+            while possible_moves != 0:
+                current = self.return_lsb_position(possible_moves)
+                move_flag = self.CAPTURE if (np.uint64(1) << current) & black_bitboard else self.QUIET_MOVE
+                moves.append(self.encode_move(move_flag, index, current))
+                possible_moves ^= (np.uint64(1) << current)
+            
+            # Castling
+            
+            if castle_bools[self.CASTLE_WHITE_KING]:
+                # Rays of sight
+                sight = self.generate_sliding_moves(current_position, white_bitboard, black_bitboard, self.ROOK_ID)
+                
+                # Short castle
+                if castle_bools[self.CASTLE_WHITE_SHORT_ROOK] and np.uint16(0b0000000011000001) in sight:
+                    moves.append(self.encode_move(self.KING_CASTLE, current_position, 0))
+                
+                # Long castle
+                if castle_bools[self.CASTLE_WHITE_LONG_ROOK] and np.uint16(0b0000000011000111) in sight:
+                    moves.append(self.encode_move(self.KING_CASTLE, current_position, 7))
+                    
+
+        elif current_position & black_bitboard:
+            possible_moves = (possible_moves & black_bitboard) ^ black_bitboard
+            while possible_moves != 0:
+                current = self.return_lsb_position(possible_moves)
+                move_flag = self.CAPTURE if (np.uint64(1) << current) & white_bitboard else self.QUIET_MOVE
+                moves.append(self.encode_move(move_flag, index, current))
+                possible_moves ^= (np.uint64(1) << current)
+                
+            if castle_bools[self.CASTLE_BLACK_KING]:
+                # Rays of sight
+                sight = self.generate_sliding_moves(current_position, white_bitboard, black_bitboard, self.ROOK_ID)
+                
+                # Short castle
+                if castle_bools[self.CASTLE_BLACK_SHORT_ROOK] and np.uint16(0b0000111011111000) in sight:
+                    moves.append(self.encode_move(self.KING_CASTLE, current_position, 56))
+                
+                # Long castle
+                if castle_bools[self.CASTLE_BLACK_LONG_ROOK] and np.uint16(0b0000111011111111) in sight:
+                    moves.append(self.encode_move(self.KING_CASTLE, current_position, 63))
+
+        return np.array(moves)
+        
+    def generate_sliding_moves(self, current_position: np.uint64, white_bitboard: np.uint64, black_bitboard: np.uint64, piece_id):
+        moves = []
+        index = self.return_lsb_position(current_position)
+        
+        if piece_id == self.ROOK_ID:
+            index_number = magicnums.ROOK_MOVES[index].index_number
+            magic_number = magicnums.ROOK_MOVES[index].magic
+            offset = magicnums.ROOK_MOVES[index].offset
+            mask = magicnums.ROOK_MOVES[index].mask
+            
+            blockers = (white_bitboard | black_bitboard) & mask
+            possible_moves = self.ROOK_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
+        elif piece_id == self.BISHOP_ID:
+            index_number = magicnums.BISHOP_MOVES[index].index_number
+            magic_number = magicnums.BISHOP_MOVES[index].magic
+            offset = magicnums.BISHOP_MOVES[index].offset
+            mask = magicnums.BISHOP_MOVES[index].mask
+            
+            blockers = (white_bitboard | black_bitboard) & mask
+            possible_moves = self.BISHOP_TABLE[self.generate_magic_index(blockers, magic_number, index_number, offset)]
+        elif piece_id == self.QUEEN_ID:
+            return np.concatenate(self.generate_sliding_moves(current_position, white_bitboard, black_bitboard, self.ROOK_ID), self.generate_legal_moves(current_position, white_bitboard, black_bitboard, self.BISHOP_ID))
+        
+        if current_position & white_bitboard:
+            while possible_moves != 0:
+                current = self.return_lsb_position(possible_moves)
+                move_flag = self.CAPTURE if (np.uint64(1) << current) & black_bitboard else self.QUIET_MOVE
+                moves.append(self.encode_move(move_flag, index, current))
+                possible_moves ^= (np.uint64(1) << current)
+        elif current_position & black_bitboard:
+            while possible_moves != 0:
+                current = self.return_lsb_position(possible_moves)
+                move_flag = self.CAPTURE if (np.uint64(1) << current) & white_bitboard else self.QUIET_MOVE
+                moves.append(self.encode_move(move_flag, index, current))
+                possible_moves ^= (np.uint64(1) << current)
+            
+        return np.array(moves)
     
     # MOVE EXECUTION
-    def do_move(self):
-        pass
-    
-    def undo_move(self):
-        pass
+    def do_move(self, move: np.uint16):
+
+        flag, from_pos, to_pos = self.decode_move(move)
+        
+        fromBB = np.uint64(1) << from_pos
+        toBB = np.uint64(1) << to_pos
+        fromToBB = fromBB ^ toBB
+        
+        # First, find the piece_id and color
+        piece_id = -1
+        for id, bb in enumerate(self.piece_bitboards):
+            if fromBB & bb:
+                piece_id = id
+                break
+        
+        side = -1
+        for id, color in enumerate(self.side_bitboards):
+            if fromBB & color:
+                side = id
+        
+        castle_bools = self.castle_bools_queue.get()
+        self.castle_bools_queue.put(castle_bools)
+        
+        # Update castling parameters depending on position of original position
+        if piece_id in [self.ROOK_ID, self.KING_ID]:
+            if from_pos == 0:
+                castle_bools[self.CASTLE_WHITE_SHORT_ROOK] = False
+            elif from_pos == 3:
+                castle_bools[self.CASTLE_WHITE_KING] = False
+            elif from_pos == 3:
+                castle_bools[self.CASTLE_WHITE_LONG_ROOK] = False
+            elif from_pos == 56:
+                castle_bools[self.CASTLE_BLACK_SHORT_ROOK] = False
+            elif from_pos == 59:
+                castle_bools[self.CASTLE_BLACK_KING] = False
+            elif from_pos == 63:
+                castle_bools[self.CASTLE_BLACK_LONG_ROOK] = False
+            
+        # Update quiet moves first
+        self.piece_bitboards[piece_id] ^= fromToBB
+        self.side_bitboards[side] ^= fromToBB
+        
+        # Then update captures
+        if flag in [self.CAPTURE, self.BISHOP_PROMOTION_CAPTURE, self.KNIGHT_PROMOTION_CAPTURE, self.QUEEN_PROMOTION_CAPTURE, self.ROOK_PROMOTION_CAPTURE]:
+            # Find id and color of captured piece
+            captured_piece_id = -1
+            for id, bb in enumerate(self.piece_bitboards):
+                if toBB & bb:
+                    captured_piece_id = id
+                    break
+            
+            # Captured side is opposite of taking side
+            captured_side = 1 - side
+            
+            self.piece_bitboards[captured_piece_id] ^= toBB
+            self.side_bitboards[captured_side] ^= toBB
+        
+        elif flag in [self.EP_CAPTURE]:
+            if side == self.WHITE_SIDE:
+                capturedBB = np.uint64(1) << (to_pos - self.BOARD_WIDTH)
+            elif side == self.BLACK_SIDE:
+                capturedBB = np.uint64(1) << (to_pos + self.BOARD_WIDTH)
+                
+            captured_side = 1 - side
+            # We know that the captured piece must be a pawn
+            self.piece_bitboards[self.PAWN_ID] ^= capturedBB
+            self.side_bitboards[captured_side] ^= capturedBB
+        
+        # Promotions
+        if flag in [self.BISHOP_PROMOTION, self.BISHOP_PROMOTION_CAPTURE, self.KNIGHT_PROMOTION, self.KNIGHT_PROMOTION_CAPTURE, self.QUEEN_PROMOTION, self.QUEEN_PROMOTION_CAPTURE, self.ROOK_PROMOTION, self.BISHOP_PROMOTION_CAPTURE]:
+            self.piece_bitboards[piece_id] ^= toBB
+            if flag in [self.BISHOP_PROMOTION, self.BISHOP_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.BISHOP_ID] ^= toBB
+            elif flag in [self.KNIGHT_PROMOTION, self.KNIGHT_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.KNIGHT_ID] ^= toBB
+            elif flag in [self.QUEEN_PROMOTION, self.QUEEN_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.QUEEN_ID] ^= toBB
+            elif flag in [self.ROOK_PROMOTION, self.ROOK_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.ROOK_ID] ^= toBB
+        
+        self.move_history.append(move)
+        self.castle_bools_queue.put(castle_bools)
+        
+        
+    def undo_move(self, history: list):
+        last_move = history[-1]
+        flag, from_pos, to_pos = self.decode_move(last_move)
+        
+        fromBB = np.uint64(1) << from_pos
+        toBB = np.uint64(1) << to_pos
+        fromToBB = fromBB ^ toBB
+        
+        # First, find the piece_id and color
+        piece_id = -1
+        for id, bb in enumerate(self.piece_bitboards):
+            if fromBB & bb:
+                piece_id = id
+                break
+        
+        side = -1
+        for id, color in enumerate(self.side_bitboards):
+            if fromBB & color:
+                side = id
+        
+        # Reset castle bools queue to previous state
+        self.castle_bools_queue.get()
+        self.move_history = self.move_history[:-1]
+        
+        # Undo promotions
+        if flag in [self.BISHOP_PROMOTION, self.BISHOP_PROMOTION_CAPTURE, self.KNIGHT_PROMOTION, self.KNIGHT_PROMOTION_CAPTURE, self.QUEEN_PROMOTION, self.QUEEN_PROMOTION_CAPTURE, self.ROOK_PROMOTION, self.BISHOP_PROMOTION_CAPTURE]:
+            self.piece_bitboards[piece_id] ^= toBB
+            if flag in [self.BISHOP_PROMOTION, self.BISHOP_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.BISHOP_ID] ^= toBB
+            elif flag in [self.KNIGHT_PROMOTION, self.KNIGHT_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.KNIGHT_ID] ^= toBB
+            elif flag in [self.QUEEN_PROMOTION, self.QUEEN_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.QUEEN_ID] ^= toBB
+            elif flag in [self.ROOK_PROMOTION, self.ROOK_PROMOTION_CAPTURE]:
+                self.piece_bitboards[self.ROOK_ID] ^= toBB
+                
+        # Then undo captures
+        if flag in [self.CAPTURE, self.BISHOP_PROMOTION_CAPTURE, self.KNIGHT_PROMOTION_CAPTURE, self.QUEEN_PROMOTION_CAPTURE, self.ROOK_PROMOTION_CAPTURE]:
+            # Find id and color of captured piece
+            captured_piece_id = -1
+            for id, bb in enumerate(self.piece_bitboards):
+                if toBB & bb:
+                    captured_piece_id = id
+                    break
+            
+            # Captured side is opposite of taking side
+            captured_side = 1 - side
+            
+            self.piece_bitboards[captured_piece_id] ^= toBB
+            self.side_bitboards[captured_side] ^= toBB
+        
+        elif flag in [self.EP_CAPTURE]:
+            if side == self.WHITE_SIDE:
+                capturedBB = np.uint64(1) << (to_pos - self.BOARD_WIDTH)
+            elif side == self.BLACK_SIDE:
+                capturedBB = np.uint64(1) << (to_pos + self.BOARD_WIDTH)
+                
+            captured_side = 1 - side
+            # We know that the captured piece must be a pawn
+            self.piece_bitboards[self.PAWN_ID] ^= capturedBB
+            self.side_bitboards[captured_side] ^= capturedBB
+                
+        # Reset quiet moves
+        self.piece_bitboards[piece_id] ^= fromToBB
+        self.side_bitboards[side] ^= fromToBB
+        
+        
+        
+        
+
     
     # HELPER FUNCTIONS
     def generate_magic_index(self, blockers: np.uint64, magic_number: np.uint64, index_number: np.uint64, offset: np.uint64) -> np.uint64:
@@ -237,9 +537,7 @@ class Board:
                     break
         
         return table
-    
-    def 
-    
+
     def generate_piece_rays(self, deltas_int: tuple[int, int], blockers: np.uint64, position: int) -> np.uint64:
         final = np.uint64(0)
         deltas = (np.uint64(deltas_int[0]), np.uint64(deltas_int[1]))
@@ -286,20 +584,20 @@ class Board:
         return False
         
     
-    def encode_move(self, from_pos: int | np.uint64, to_pos: int | np.uint64, flag: int) -> np.uint64:
+    def encode_move(self, flag: int, from_pos: int | np.uint64, to_pos: int | np.uint64) -> np.uint16:
         if type(from_pos) == np.uint64:
             from_pos = self.return_lsb_position(from_pos)
         if type(to_pos) == np.uint64:
             to_pos = self.return_lsb_position(to_pos)
         
-        return np.uint16(str(flag) + str(from_pos) + str(to_pos))
+        return np.uint16((flag << 12) + (from_pos << 6) + to_pos)
     
     def decode_move(self, encoded_move: np.uint16):
         encoded_move_str = str(encoded_move)
         from_pos = encoded_move_str[:4]
         to_pos = encoded_move_str[4:10]
         flag = encoded_move_str[10:]
-        return flag, from_pos, to_pos
+        return int(flag), int(from_pos), int(to_pos)
     
     def return_lsb_position(self, bitboard):
         """Return position of least significant bit in a bitboard."""
@@ -310,6 +608,8 @@ class Board:
             return np.uint64(index)
         else:
             return np.uint64(self.NULL_POSITION)
+        
+        
     
     
 class ChessAI:
