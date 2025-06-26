@@ -3,7 +3,7 @@ PLACEHOLDER DATA TAKEN FROM https://github.com/analog-hors/magic-bitboards-demo/
 """
 
 from dataclasses import dataclass
-import numpy as np
+
 
 @dataclass
 class MagicData:
@@ -12,7 +12,7 @@ class MagicData:
     index_number: int
     offset: int
     
-ROOK_MOVES = np.array([
+ROOK_MOVES = [
     MagicData ( 0x000101010101017E, 0x5080008011400020, 52, 0 ),
     MagicData ( 0x000202020202027C, 0x0140001000402000, 53, 4096 ),
     MagicData ( 0x000404040404047A, 0x0280091000200480, 53, 6144 ),
@@ -77,9 +77,10 @@ ROOK_MOVES = np.array([
     MagicData ( 0x5E20202020202000, 0x0012008410050806, 53, 94208 ),
     MagicData ( 0x3E40404040404000, 0x2009408802100144, 53, 96256 ),
     MagicData ( 0x7E80808080808000, 0x821080440020810A, 52, 98304 )
-])
+]
+ROOK_MOVES.reverse()
 
-BISHOP_MOVES = np.array([
+BISHOP_MOVES = [
     MagicData ( 0x0040201008040200, 0x2020420401002200, 58, 0 ),
     MagicData ( 0x0000402010080400, 0x05210A020A002118, 59, 64 ),
     MagicData ( 0x0000004020100A00, 0x1110040454C00484, 59, 96 ),
@@ -144,7 +145,8 @@ BISHOP_MOVES = np.array([
     MagicData ( 0x0050080402000000, 0x0000014064080180, 59, 5120 ),
     MagicData ( 0x0020100804020000, 0xA001204204080186, 59, 5152 ),
     MagicData ( 0x0040201008040200, 0xC04010040258C048, 58, 5184 )
-])
+]
+BISHOP_MOVES.reverse()
 
 ROOK_SIZE = 102400
 BISHOP_SIZE = 5248

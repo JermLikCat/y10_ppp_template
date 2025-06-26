@@ -211,7 +211,7 @@ class Board():
             mg_phase = 24
             
         eg_phase = 24 - mg_phase
-        return (mg_score * mg_phase + eg_score * eg_phase) / 24
+        return ((mg_score * mg_phase + eg_score * eg_phase) / 24) / 100 # remove 100 later
     
     def perft_test(self, depth, side = "b"):
         if side == "b":
@@ -616,13 +616,13 @@ class Board():
     def get_possible_knight_moves(self, piece, piece_id, position: tuple[int, int], index = None):
         if index == None:
             index = (position[0] * self.board_width + position[1])
-        possible_moves = bitboard.Bitboard(lookuptables.knightTable[index], self.board_width, self.board_height)
+        possible_moves = bitboard.Bitboard(lookuptables.KNIGHT_TABLE[index], self.board_width, self.board_height)
         return possible_moves
 
     def get_possible_king_moves(self, piece, piece_id, position: tuple[int, int], index = None):
         if index == None:
             index = (position[0] * self.board_width + position[1])
-        possible_moves = bitboard.Bitboard(lookuptables.kingTable[index], self.board_width, self.board_height)
+        possible_moves = bitboard.Bitboard(lookuptables.KING_TABLE[index], self.board_width, self.board_height)
         if piece.side == "w":
             possible_moves.value = (possible_moves.value & self.white_bitboard.value) ^ possible_moves.value
         else:
